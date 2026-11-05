@@ -66,6 +66,7 @@ type file struct {
 	ReadTimeout     string         `yaml:"readTimeout"`
 	WriteTimeout    string         `yaml:"writeTimeout"`
 	WriteQueueSize  int            `yaml:"writeQueueSize"`
+	UDPReadBuffer   int            `yaml:"udpReadBufferSize"`
 	AuthMethod      string         `yaml:"authMethod"`
 	AuthUsers       []internalUser `yaml:"authInternalUsers"`
 
@@ -116,7 +117,10 @@ func (c Config) Render() ([]byte, error) {
 	f := file{
 		LogLevel: c.LogLevel, LogDestinations: []string{"stdout"},
 		ReadTimeout: "10s", WriteTimeout: "10s", WriteQueueSize: 512,
-		AuthMethod: "internal",
+		// Buffer UDP maior absorve as rajadas de keyframes de até 8 câmeras e
+		// reduz perdas de pacotes (padrão do SO costuma ser pequeno).
+		UDPReadBuffer: 8 << 20,
+		AuthMethod:    "internal",
 		AuthUsers: []internalUser{
 			{
 				// Somente o proxy WHIP do servidor (loopback + credencial) publica.

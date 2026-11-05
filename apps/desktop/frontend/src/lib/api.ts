@@ -26,7 +26,9 @@ export async function resolveServerURL(): Promise<string> {
   }
   const env = import.meta.env.VITE_SERVER_URL as string | undefined;
   if (env) return env;
-  if (location.protocol.startsWith('http') && location.port === '7380') return location.origin;
+  // Painel servido pelo próprio sacralink-server (navegador local).
+  const local = ['127.0.0.1', 'localhost', '[::1]'].includes(location.hostname);
+  if (location.protocol === 'http:' && local && location.port !== '5173') return location.origin;
   return 'http://127.0.0.1:7380';
 }
 

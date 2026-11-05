@@ -44,10 +44,13 @@ export function signalBars(c: { bitrateKbps: number; packetsLost: number; jitter
 }
 
 /** Layout da grade multicâmera para 1, 2, 4, 6 ou 8 câmeras. */
+// As colunas crescem com a largura para que a grade inteira caiba na tela
+// de produção (ex.: 1600×1000) sem rolagem.
 export function gridColumns(n: number): string {
-  if (n <= 1) return 'grid-cols-1';
-  if (n <= 2) return 'grid-cols-1 lg:grid-cols-2';
-  if (n <= 4) return 'grid-cols-1 sm:grid-cols-2';
-  if (n <= 6) return 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-3';
-  return 'grid-cols-1 sm:grid-cols-2 xl:grid-cols-4';
+  if (n <= 1) return 'grid-cols-1 mx-auto w-full max-w-5xl';
+  if (n <= 2) return 'grid-cols-1 md:grid-cols-2';
+  if (n <= 3) return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
+  if (n <= 4) return 'grid-cols-1 md:grid-cols-2 2xl:grid-cols-4';
+  if (n <= 6) return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
+  return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
 }

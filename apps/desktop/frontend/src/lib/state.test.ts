@@ -42,7 +42,8 @@ describe('formatação', () => {
     expect(formatDuration(1, 1 + 3_725_000)).toBe('1:02:05');
   });
   it('grade para 1, 2, 4, 6 e 8 câmeras', () => {
-    expect(gridColumns(1)).toBe('grid-cols-1');
+    expect(gridColumns(1)).toContain('grid-cols-1');
+    expect(gridColumns(3)).toContain('xl:grid-cols-3');
     expect(gridColumns(8)).toContain('xl:grid-cols-4');
   });
   it('barras de sinal', () => {
