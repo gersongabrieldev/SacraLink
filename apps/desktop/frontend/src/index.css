@@ -1,0 +1,122 @@
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Tokens de cor do SacraLink (tema escuro é o padrão). */
+:root {
+  --bg: #f4f5f8;
+  --surface: #ffffff;
+  --surface-2: #eef0f4;
+  --border: #d9dde5;
+  --text: #141821;
+  --muted: #5b6474;
+  --accent: #c9821f;
+  --onair: #d93b41;
+  --preview: #1f8a54;
+  --warn: #b7791f;
+  --info: #2f6fdb;
+}
+.dark {
+  --bg: #0b0e14;
+  --surface: #131823;
+  --surface-2: #1a2030;
+  --border: #252d3d;
+  --text: #e7eaf0;
+  --muted: #8b94a6;
+  --accent: #f0a83a;
+  --onair: #e5484d;
+  --preview: #30a46c;
+  --warn: #f5b942;
+  --info: #4c8ff7;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--border);
+  --color-fg: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-onair: var(--onair);
+  --color-preview: var(--preview);
+  --color-warn: var(--warn);
+  --color-info: var(--info);
+  --font-sans: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  user-select: none;
+}
+input,
+textarea,
+select {
+  user-select: text;
+}
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+@utility card {
+  @apply rounded-xl border border-line bg-surface;
+}
+
+@utility btn {
+  @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40;
+}
+
+@utility btn-primary {
+  @apply btn bg-accent text-black hover:brightness-110;
+}
+
+@utility btn-ghost {
+  @apply btn border border-line bg-surface-2 text-fg hover:border-accent/60;
+}
+
+@utility btn-danger {
+  @apply btn bg-onair text-white hover:brightness-110;
+}
+
+@utility btn-preview {
+  @apply btn bg-preview text-white hover:brightness-110;
+}
+
+@utility input {
+  @apply w-full rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm text-fg placeholder:text-muted focus:border-accent focus:outline-none;
+}
+
+@utility label {
+  @apply mb-1 block text-xs font-semibold tracking-wide text-muted uppercase;
+}
+
+@utility pill {
+  @apply inline-flex items-center gap-1.5 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-xs font-medium whitespace-nowrap;
+}
+
+@keyframes onair-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+.pulse-dot {
+  animation: onair-pulse 1.4s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pulse-dot {
+    animation: none;
+  }
+}
