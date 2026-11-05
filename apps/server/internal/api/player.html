@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>SacraLink — {{.Name}}</title>
+<style>
+  html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+  video { width: 100%; height: 100%; object-fit: contain; background: transparent; }
+  #status { position: fixed; left: 12px; bottom: 12px; font: 600 14px system-ui, sans-serif; color: #fff;
+            background: rgba(0,0,0,.55); padding: 4px 10px; border-radius: 6px; display: none; }
+</style>
+</head>
+<body>
+<video id="v" autoplay playsinline {{if .Muted}}muted{{end}}></video>
+<div id="status"></div>
+<script>
+// Cliente WHEP mínimo: reconecta sozinho quando a câmera cai ou volta.
+(() => {
+  const cameraId = {{.CameraID}};
+  const video = document.getElementById('v');
+  const status = document.getElementById('status');
+  let pc = null, location = null, retry = 1000;
+
+  const show = (msg) => { status.textContent = msg; status.style.display = msg ? 'block' : 'none'; };
+
+  async function stop() {
+    if (pc) { try { pc.close(); } catch (_) {} pc = null; }
+    if (location) { fetch(location, { method: 'DELETE' }).catch(() => {}); location = null; }
+  }
+
+  async function start() {
+    await stop();
+    pc = new RTCPeerConnection();
+    pc.addTransceiver('video', { direction: 'recvonly' });
+    pc.addTransceiver('audio', { direction: 'recvonly' });
+    pc.ontrack = (e) => { if (video.srcObject !== e.streams[0]) video.srcObject = e.streams[0]; };
+    pc.onconnectionstatechange = () => {
+      if (pc && (pc.connectionState === 'failed' || pc.connectionState === 'disconnected')) schedule('sinal perdido');
+      if (pc && pc.connectionState === 'connected') { retry = 1000; show(''); }
+    };
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    await new Promise((res) => {
+      if (pc.iceGatheringState === 'complete') return res();
+      const t = setTimeout(res, 1000);
+      pc.addEventListener('icegatheringstatechange', () => { if (pc.iceGatheringState === 'complete') { clearTimeout(t); res(); } });
+    });
+    const resp = await fetch('/whep/' + encodeURIComponent(cameraId), {
+      method: 'POST', headers: { 'Content-Type': 'application/sdp' }, body: pc.localDescription.sdp,
+    });
+    if (resp.status !== 201) throw new Error('câmera indisponível (' + resp.status + ')');
+    location = resp.headers.get('Location');
+    await pc.setRemoteDescription({ type: 'answer', sdp: await resp.text() });
+  }
+
+  function schedule(reason) {
+    show('Aguardando câmera… ' + (reason || ''));
+    setTimeout(() => start().catch((e) => schedule(e.message)), retry);
+    retry = Math.min(retry * 2, 8000);
+  }
+
+  window.addEventListener('beforeunload', stop);
+  start().catch((e) => schedule(e.message));
+})();
+</script>
+</body>
+</html>
