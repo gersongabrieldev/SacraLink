@@ -1,0 +1,103 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GO_VERSION: "1.27.x"
+  MEDIAMTX_VERSION: "v1.21.3"
+
+jobs:
+  server-linux:
+    name: Servidor (Linux, -race)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: apps/server/go.sum
+      - name: MediaMTX para os testes ponta a ponta
+        run: |
+          mkdir -p third_party/bin/mediamtx
+          curl -fsSL -o /tmp/mtx.tar.gz "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz"
+          curl -fsSL -o /tmp/checksums.sha256 "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/checksums.sha256"
+          (cd /tmp && grep "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" checksums.sha256 | sed 's#  .*#  mtx.tar.gz#' | sha256sum -c -)
+          tar -xzf /tmp/mtx.tar.gz -C third_party/bin/mediamtx
+      - name: gofmt
+        working-directory: apps/server
+        run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
+      - name: go vet
+        working-directory: apps/server
+        run: go vet ./...
+      - name: Testes (com detector de corridas)
+        working-directory: apps/server
+        run: go test -race -count=1 ./...
+
+  server-windows:
+    name: Servidor (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: apps/server/go.sum
+      - name: MediaMTX
+        shell: pwsh
+        run: ./scripts/fetch-mediamtx.ps1 -Version $env:MEDIAMTX_VERSION
+      - name: Testes
+        working-directory: apps/server
+        run: go test -count=1 ./...
+
+  frontend:
+    name: Painel (frontend)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/desktop/frontend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: apps/desktop/frontend/package-lock.json
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npm audit --omit=dev --audit-level=high
+
+  windows-build:
+    name: Build Windows (painel + servidor)
+    runs-on: windows-latest
+    needs: [server-windows, frontend]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: |
+            apps/server/go.sum
+            apps/desktop/go.sum
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Build
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -Version "0.0.0-ci.${{ github.run_number }}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SacraLink-windows-x64-ci
+          path: dist-release/SacraLink
+          retention-days: 7

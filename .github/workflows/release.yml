@@ -1,0 +1,70 @@
+name: Release
+
+# Gera o instalador SacraLink-Setup-x64.exe e publica um rascunho de release.
+# Disparo: tag vX.Y.Z (ex.: git tag v0.1.0 && git push origin v0.1.0) ou manual.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Versão (ex.: 0.1.0)"
+        required: true
+
+permissions:
+  contents: write
+
+env:
+  GO_VERSION: "1.27.x"
+
+jobs:
+  installer:
+    name: Instalador Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: Versão
+        id: ver
+        shell: pwsh
+        run: |
+          $v = if ("${{ github.event.inputs.version }}") { "${{ github.event.inputs.version }}" } else { "${{ github.ref_name }}".TrimStart("v") }
+          "version=$v" >> $env:GITHUB_OUTPUT
+      - name: Build
+        shell: pwsh
+        run: ./scripts/build-windows.ps1 -Version "${{ steps.ver.outputs.version }}"
+      - name: WebView2 Runtime (bootstrapper oficial da Microsoft)
+        shell: pwsh
+        run: Invoke-WebRequest "https://go.microsoft.com/fwlink/p/?LinkId=2124703" -OutFile dist-release/MicrosoftEdgeWebview2Setup.exe
+      - name: Inno Setup
+        shell: pwsh
+        run: |
+          if (-not (Get-Command iscc -ErrorAction SilentlyContinue) -and -not (Test-Path "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe")) { choco install innosetup -y --no-progress }
+      - name: Compilar instalador
+        shell: pwsh
+        run: |
+          $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
+          if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
+          & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" installer/windows/SacraLink.iss
+          if ($LASTEXITCODE -ne 0) { throw "ISCC falhou" }
+          $exe = "installer/windows/Output/SacraLink-Setup-x64.exe"
+          $h = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
+          "$h  SacraLink-Setup-x64.exe" | Out-File -Encoding ascii installer/windows/Output/SHA256SUMS.txt
+          Get-ChildItem installer/windows/Output
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SacraLink-Setup-x64-${{ steps.ver.outputs.version }}
+          path: installer/windows/Output/*
+      - name: Rascunho de release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          files: |
+            installer/windows/Output/SacraLink-Setup-x64.exe
+            installer/windows/Output/SHA256SUMS.txt
