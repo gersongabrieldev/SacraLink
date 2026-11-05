@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../pairing.dart';
 import '../server_api.dart';
@@ -34,18 +33,6 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _load() async {
     final s = await _store.list();
     if (mounted) setState(() => _servers = s);
-  }
-
-  Future<bool> _permissions() async {
-    final r = await [Permission.camera, Permission.microphone].request();
-    final ok = r.values.every((s) => s.isGranted);
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: const Text('O SacraLink precisa da câmera e do microfone para transmitir.'),
-        action: SnackBarAction(label: 'Configurações', onPressed: openAppSettings),
-      ));
-    }
-    return ok;
   }
 
   Future<Map<String, String>> _deviceInfo() async {
@@ -83,7 +70,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _scan() async {
-    if (!await _permissions() || !mounted) return;
+    // A permissão da câmera é pedida pelo próprio leitor (mobile_scanner).
     final raw = await Navigator.of(context).push<String>(MaterialPageRoute(builder: (_) => const ScanScreen()));
     if (raw != null) await _pairWith(raw);
   }
@@ -109,7 +96,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _open(ServerCredentials c) async {
-    if (!await _permissions() || !mounted) return;
+    // Câmera e microfone são pedidos pelo flutter_webrtc ao abrir a câmera.
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => CameraScreen(creds: c)));
     await _load();
   }

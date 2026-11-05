@@ -18,7 +18,6 @@ dependencies:
   connectivity_plus: ^7.3.2
   device_info_plus: ^13.3.0
   package_info_plus: ^10.2.2
-  permission_handler: ^13.0.2
   sacralink_device_caps:
     path: packages/sacralink_device_caps
 

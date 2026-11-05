@@ -38,7 +38,7 @@ class _CameraScreenState extends State<CameraScreen> {
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     s.addListener(_refresh);
     s.open().catchError((Object e) {
-      if (mounted) _snack('Não foi possível abrir a câmera: $e');
+      if (mounted) _snack('Não foi possível abrir a câmera. Verifique se o SacraLink tem permissão de câmera e microfone nas configurações do sistema. ($e)');
     });
     _clock = Timer.periodic(const Duration(seconds: 1), (_) => _refresh());
   }

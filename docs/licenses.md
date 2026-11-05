@@ -39,7 +39,6 @@ distribuído sob a licença MIT; todas as dependências abaixo são compatíveis
 | mobile_scanner | BSD-3-Clause | No Android usa Google ML Kit (termos do Google) |
 | flutter_secure_storage | BSD-3-Clause | |
 | wakelock_plus, connectivity_plus, device_info_plus, package_info_plus | BSD-3-Clause | |
-| permission_handler | MIT | |
 | crypto | BSD-3-Clause | |
 
 ## Não redistribuídos
