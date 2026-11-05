@@ -55,7 +55,7 @@ As mudanças abaixo têm justificativa técnica:
 | Banco | modernc.org/sqlite | BSD-3 | Embutido no servidor | |
 | Bandeja | fyne.io/systray | Apache-2.0 | Servidor | |
 | Painel | Wails v2 + React 18 + TypeScript + Tailwind | MIT | PC da igreja | Requer **WebView2 Runtime** (já presente no Win 11; o instalador instala no Win 10 se faltar) |
-| App móvel | Flutter 3 + flutter_webrtc | BSD-3 / MIT | Android 8+ / iOS 14+ | |
+| App móvel | Flutter 3 + flutter_webrtc | BSD-3 / MIT | Android 7+ (API 24) / iOS 15.5+ | |
 | QR Code (móvel) | mobile_scanner | BSD-3 | | No Android usa Google ML Kit (binário proprietário gratuito) — documentado em [licenças](../licenses.md) |
 | Instalador | Inno Setup 6 | Licença própria (permite uso comercial) | CI / dev | |
 | OBS | OBS Studio 28+ (obs-websocket 5.x embutido) | GPL-2.0 | PC da igreja | **Não** redistribuímos o OBS. Comunicação apenas via protocolo de rede, sem linkagem |
