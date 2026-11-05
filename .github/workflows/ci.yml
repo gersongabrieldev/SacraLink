@@ -31,7 +31,7 @@ jobs:
           mkdir -p third_party/bin/mediamtx
           curl -fsSL -o /tmp/mtx.tar.gz "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz"
           curl -fsSL -o /tmp/checksums.sha256 "https://github.com/bluenviron/mediamtx/releases/download/${MEDIAMTX_VERSION}/checksums.sha256"
-          (cd /tmp && grep "mediamtx_${MEDIAMTX_VERSION}_linux_amd64.tar.gz" checksums.sha256 | sed 's#  .*#  mtx.tar.gz#' | sha256sum -c -)
+          (cd /tmp && echo "$(awk '/_linux_amd64.tar.gz/{print $1}' checksums.sha256)  mtx.tar.gz" | sha256sum -c -)
           tar -xzf /tmp/mtx.tar.gz -C third_party/bin/mediamtx
       - name: gofmt
         working-directory: apps/server
@@ -101,3 +101,54 @@ jobs:
           name: SacraLink-windows-x64-ci
           path: dist-release/SacraLink
           retention-days: 7
+
+  mobile:
+    name: App móvel (análise, testes e APK)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Gerar plataformas (flutter create + configurações)
+        run: bash ../../scripts/mobile/bootstrap.sh
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test
+      - name: APK de teste (debug, sem assinatura de loja)
+        run: flutter build apk --debug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: sacralink-camera-android-debug
+          path: apps/mobile/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 7
+
+  mobile-ios:
+    name: App móvel (iOS, sem assinatura)
+    runs-on: macos-latest
+    needs: mobile
+    defaults:
+      run:
+        working-directory: apps/mobile
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Gerar plataformas
+        run: bash ../../scripts/mobile/bootstrap.sh
+      - run: flutter pub get
+      - name: Gerar Podfile e aplicar alvo iOS 15.5
+        run: |
+          flutter build ios --config-only --no-codesign || true
+          bash ../../scripts/mobile/bootstrap.sh
+      - run: flutter build ios --no-codesign --debug

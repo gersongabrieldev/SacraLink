@@ -65,3 +65,10 @@ apps/mobile/android/app/release/
 
 # Recursos Windows gerados no build
 *.syso
+
+# Plataformas do app móvel geradas por scripts/mobile/bootstrap.sh (flutter create)
+apps/mobile/android/
+apps/mobile/ios/
+apps/mobile/.metadata
+apps/mobile/pubspec.lock
+apps/mobile/packages/sacralink_device_caps/android/.gradle/

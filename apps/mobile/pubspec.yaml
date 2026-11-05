@@ -1,0 +1,35 @@
+name: sacralink_camera
+description: SacraLink Camera — transforma o celular em câmera sem fio do SacraLink (WebRTC/WHIP).
+publish_to: none
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.10.0
+  flutter: ">=3.44.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_webrtc: ^1.6.3
+  mobile_scanner: ^7.5.0
+  http: ^1.6.0
+  crypto: ^3.0.8
+  flutter_secure_storage: ^11.2.0
+  wakelock_plus: ^1.8.2
+  battery_plus: ^7.1.2
+  connectivity_plus: ^7.3.2
+  device_info_plus: ^13.3.0
+  package_info_plus: ^10.2.2
+  permission_handler: ^13.0.2
+  sacralink_device_caps:
+    path: packages/sacralink_device_caps
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/logo.png

@@ -1,0 +1,21 @@
+name: sacralink_device_caps
+description: Capacidades reais das câmeras (lentes, zoom mínimo/máximo, fatores ópticos) e estado térmico do aparelho para o SacraLink Camera.
+version: 0.1.0
+publish_to: none
+
+environment:
+  sdk: ^3.6.0
+  flutter: ">=3.27.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+flutter:
+  plugin:
+    platforms:
+      android:
+        package: br.org.sacralink.devicecaps
+        pluginClass: SacralinkDeviceCapsPlugin
+      ios:
+        pluginClass: SacralinkDeviceCapsPlugin
