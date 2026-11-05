@@ -36,6 +36,9 @@ type Config struct {
 	STUNServers   []string // opcional: apenas descoberta, nunca relay
 	LogLevel      string
 	IPsFromIfaces bool
+	// UDPReadBuffer: tamanho do buffer de leitura UDP em bytes (0 = padrão do SO).
+	// Padrão do SacraLink: 8 MB; o supervisor volta a 0 se o SO recusar.
+	UDPReadBuffer int
 }
 
 type permission struct {
@@ -119,7 +122,7 @@ func (c Config) Render() ([]byte, error) {
 		ReadTimeout: "10s", WriteTimeout: "10s", WriteQueueSize: 512,
 		// Buffer UDP maior absorve as rajadas de keyframes de até 8 câmeras e
 		// reduz perdas de pacotes (padrão do SO costuma ser pequeno).
-		UDPReadBuffer: 8 << 20,
+		UDPReadBuffer: c.UDPReadBuffer,
 		AuthMethod:    "internal",
 		AuthUsers: []internalUser{
 			{

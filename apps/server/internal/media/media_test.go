@@ -177,3 +177,28 @@ func TestSupervisorComMediaMTXReal(t *testing.T) {
 	sup.Restart()
 	wait("reinício solicitado", func() bool { st := sup.Status(); return st.State == StateRunning && st.Restarts >= 2 })
 }
+
+// TestFallbackDoBufferUDP pede um buffer UDP que o SO recusa (1 GB): o
+// supervisor deve voltar ao padrão do sistema e manter o MediaMTX rodando.
+func TestFallbackDoBufferUDP(t *testing.T) {
+	exe, err := FindExecutable()
+	if err != nil {
+		t.Skip("mediamtx não disponível: ", err)
+	}
+	cfg := testConfig(t)
+	cfg.UDPReadBuffer = 1 << 30
+	sup, err := NewSupervisor(SupervisorOptions{Executable: exe, ConfigPath: filepath.Join(t.TempDir(), "mediamtx.yml"), Config: cfg})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { sup.Run(ctx); close(done) }()
+	defer func() { cancel(); <-done }()
+	for deadline := time.Now().Add(20 * time.Second); time.Now().Before(deadline); time.Sleep(100 * time.Millisecond) {
+		if sup.Status().State == StateRunning {
+			return // aceito pelo SO ou recuperado pelo fallback
+		}
+	}
+	t.Fatalf("MediaMTX não ficou em execução: %+v", sup.Status())
+}

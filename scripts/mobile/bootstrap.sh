@@ -12,6 +12,12 @@ flutter create --platforms=android,ios --org br.org.sacralink --project-name sac
   --description "SacraLink Camera" . >/dev/null
 echo "plataformas geradas"
 
+# O `flutter create` gera um teste de exemplo (contador "MyApp") que não se
+# aplica ao SacraLink Camera; os testes reais estão em test/*_test.dart.
+if [ -f test/widget_test.dart ] && grep -q "MyApp" test/widget_test.dart; then
+  rm test/widget_test.dart
+fi
+
 sedi() { sed -i.bak "$@" && rm -f "${@: -1}.bak"; }
 
 # --- Android -----------------------------------------------------------------

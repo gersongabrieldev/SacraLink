@@ -161,7 +161,7 @@ func TestPontaAPonta(t *testing.T) {
 		t.Fatal(err)
 	}
 	defer ctl.Close()
-	waitFor(t, "hello_ack", 5*time.Second, func() bool { return ctl.Ack.CameraID == creds.CameraID })
+	waitFor(t, "hello_ack", 5*time.Second, func() bool { return ctl.HelloAck().CameraID == creds.CameraID })
 
 	waitFor(t, "servidor de mídia em execução", 20*time.Second, func() bool {
 		var s struct{ Media struct{ State string } }

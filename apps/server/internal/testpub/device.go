@@ -168,6 +168,13 @@ func (c *Control) loop() {
 	}
 }
 
+// HelloAck retorna a resposta do servidor ao hello (com lock).
+func (c *Control) HelloAck() control.HelloAck {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	return c.Ack
+}
+
 // LastTally retorna o último tally recebido.
 func (c *Control) LastTally() (control.Tally, bool) {
 	c.mu.Lock()

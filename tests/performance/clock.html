@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Relógio de latência</title>
+<style>
+  :root { color-scheme: dark; }
+  html, body { margin: 0; height: 100%; background: #000; color: #fff; }
+  body { display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: ui-monospace, Consolas, monospace; }
+  #t { font-size: 18vw; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  #bar { width: 90vw; height: 6vh; background: #222; position: relative; }
+  #fill { position: absolute; inset: 0 auto 0 0; background: #f0a83a; }
+  p { color: #888; font-family: system-ui, sans-serif; font-size: 2vw; text-align: center; padding: 0 16px; }
+</style>
+</head>
+<body>
+<div id="t">00.000</div>
+<div id="bar"><div id="fill"></div></div>
+<p>Aponte a câmera do celular para esta tela e fotografe-a ao lado da fonte no OBS.<br>Latência = tempo real − tempo exibido no OBS.</p>
+<script>
+  const t = document.getElementById('t');
+  const fill = document.getElementById('fill');
+  function frame(now) {
+    const ms = Math.floor(performance.timeOrigin + now) % 60000;
+    t.textContent = String(Math.floor(ms / 1000)).padStart(2, '0') + '.' + String(ms % 1000).padStart(3, '0');
+    fill.style.width = ((ms % 1000) / 10) + '%';
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+</script>
+</body>
+</html>

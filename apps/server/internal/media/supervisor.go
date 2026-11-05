@@ -63,6 +63,8 @@ type Supervisor struct {
 	status Status
 	cfg    Config
 	logs   []string
+	// udpFallback: o SO recusou o buffer UDP ampliado; manter o padrão.
+	udpFallback bool
 }
 
 // ErrPortInUse indica conflito de porta com outro programa.
@@ -115,6 +117,9 @@ func (s *Supervisor) Restart() {
 // UpdateConfig troca a configuração e reinicia o MediaMTX.
 func (s *Supervisor) UpdateConfig(cfg Config) {
 	s.mu.Lock()
+	if s.udpFallback {
+		cfg.UDPReadBuffer = 0
+	}
 	s.cfg = cfg
 	s.mu.Unlock()
 	s.Restart()
@@ -228,6 +233,15 @@ func (s *Supervisor) runOnce(ctx context.Context) error {
 		}
 		select {
 		case e := <-exited:
+			if cfg.UDPReadBuffer > 0 && s.logsContain("unable to set UDP read buffer size") {
+				// O SO não permite o buffer pedido: volta ao padrão do sistema.
+				s.log.Warn("o sistema recusou o buffer UDP ampliado; usando o padrão do sistema operacional", "pedido", cfg.UDPReadBuffer)
+				s.mu.Lock()
+				s.cfg.UDPReadBuffer = 0
+				s.udpFallback = true
+				s.mu.Unlock()
+				return errRestartRequested
+			}
 			return fmt.Errorf("mediamtx encerrou na inicialização: %v", e)
 		case <-ctx.Done():
 			return stop(nil)
@@ -399,4 +413,18 @@ func VerifyChecksum(exe string) (verified bool, err error) {
 		return false, fmt.Errorf("integridade do MediaMTX comprometida: SHA-256 %s, esperado %s", got, expected)
 	}
 	return true, nil
+}
+
+// logsContain informa se alguma linha recente de log contém o texto.
+func (s *Supervisor) logsContain(text string) bool {
+	// Dá tempo para o leitor de stdout processar as últimas linhas.
+	time.Sleep(100 * time.Millisecond)
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, l := range s.logs {
+		if strings.Contains(l, text) {
+			return true
+		}
+	}
+	return false
 }

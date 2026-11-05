@@ -174,6 +174,7 @@ func (a *App) buildMediaConfig(s settings.Settings) media.Config {
 	c := media.Config{
 		Ports: a.cfg.MediaPorts, PublishUser: a.pubUser, PublishPass: a.pubPass,
 		ICEListenHost: a.cfg.ICEListenHost, ICETCP: s.ICETCP, IPsFromIfaces: true,
+		UDPReadBuffer: 8 << 20,
 	}
 	if a.cfg.ICEListenHost == "127.0.0.1" {
 		c.IPsFromIfaces, c.AdditionalIPs = false, []string{"127.0.0.1"}

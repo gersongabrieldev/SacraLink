@@ -162,16 +162,16 @@ func TestQuedaVaiParaReconnecting(t *testing.T) {
 	close(stop)
 	e.media.stop(e.cams[0].MediaPath())
 	e.waitFor("RECONNECTING", func() bool { return e.view(0).State == StateReconnecting })
-	evs, _ := e.st.ListEvents(context.Background(), 10)
-	found := false
-	for _, ev := range evs {
-		if ev.Kind == "camera_lost" {
-			found = true
+	// O evento é gravado logo após a mudança de estado (fora do lock).
+	e.waitFor("evento de perda registrado", func() bool {
+		evs, _ := e.st.ListEvents(context.Background(), 10)
+		for _, ev := range evs {
+			if ev.Kind == "camera_lost" {
+				return true
+			}
 		}
-	}
-	if !found {
-		t.Fatalf("evento de perda não registrado: %+v", evs)
-	}
+		return false
+	})
 }
 
 func TestLimiteDeTransmissoes(t *testing.T) {
