@@ -275,12 +275,11 @@ class _CameraScreenState extends State<CameraScreen> {
         child: ListView(shrinkWrap: true, padding: const EdgeInsets.all(16), children: [
           const Text('Qualidade', style: TextStyle(fontWeight: FontWeight.w700)),
           for (final p in _profiles)
-            RadioListTile<String>(
-              value: p.id,
-              groupValue: s.profile.id,
+            ListTile(
+              leading: Icon(s.profile.id == p.id ? Icons.radio_button_checked : Icons.radio_button_unchecked, color: SacraColors.accent),
               title: Text('${p.height}p ${p.fps} FPS'),
               subtitle: Text('até ${(p.maxBitrateKbps / 1000).toStringAsFixed(1)} Mbps'),
-              onChanged: (_) {
+              onTap: () {
                 Navigator.pop(ctx);
                 _guard(() => s.setProfile(p));
               },
@@ -293,8 +292,11 @@ class _CameraScreenState extends State<CameraScreen> {
             onTap: () async {
               Navigator.pop(ctx);
               try {
-                _snack(await s.testExternal());
+                final msg = await s.testExternal();
+                if (!mounted) return;
+                _snack(msg);
               } catch (e) {
+                if (!mounted) return;
                 _snack('Falhou: $e');
               }
             },

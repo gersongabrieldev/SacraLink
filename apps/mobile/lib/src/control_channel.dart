@@ -18,6 +18,7 @@ class ControlChannel {
   Map<String, dynamic> Function()? hello;
 
   WebSocket? _ws;
+  StreamSubscription<dynamic>? _sub;
   Timer? _ping;
   Timer? _retry;
   bool _closed = false;
@@ -40,7 +41,7 @@ class ControlChannel {
       send('hello', hello?.call() ?? const {});
       onState(true, null);
       _ping = Timer.periodic(const Duration(seconds: 5), (_) => send('ping', const {}));
-      ws.listen(_onData, onDone: () => _onClosed(ws.closeReason), onError: (Object e) => _onClosed('$e'), cancelOnError: true);
+      _sub = ws.listen(_onData, onDone: () => _onClosed(ws.closeReason), onError: (Object e) => _onClosed('$e'), cancelOnError: true);
     } on WebSocketException catch (e) {
       _onClosed(e.message.contains('401') ? 'credencial recusada pelo servidor' : e.message);
     } catch (e) {
@@ -61,6 +62,8 @@ class ControlChannel {
 
   void _onClosed(String? reason) {
     _ping?.cancel();
+    _sub?.cancel();
+    _sub = null;
     _ws = null;
     onState(false, reason);
     if (_closed) return;
@@ -83,6 +86,7 @@ class ControlChannel {
     _closed = true;
     _retry?.cancel();
     _ping?.cancel();
+    await _sub?.cancel();
     await _ws?.close(WebSocketStatus.normalClosure);
     _ws = null;
   }

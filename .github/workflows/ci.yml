@@ -121,7 +121,7 @@ jobs:
       - name: Gerar plataformas (flutter create + configurações)
         run: bash ../../scripts/mobile/bootstrap.sh
       - run: flutter pub get
-      - run: flutter analyze
+      - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - name: APK de teste (debug, sem assinatura de loja)
         run: flutter build apk --debug

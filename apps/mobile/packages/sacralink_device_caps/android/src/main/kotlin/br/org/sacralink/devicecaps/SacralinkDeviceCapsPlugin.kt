@@ -3,6 +3,7 @@ package br.org.sacralink.devicecaps
 import android.content.Context
 import android.hardware.camera2.CameraCharacteristics
 import android.hardware.camera2.CameraManager
+import android.os.BatteryManager
 import android.os.Build
 import android.os.PowerManager
 import io.flutter.embedding.engine.plugins.FlutterPlugin
@@ -37,6 +38,7 @@ class SacralinkDeviceCapsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler
                 result.error("camera", e.message, null)
             }
             "thermal" -> result.success(thermal())
+            "battery" -> result.success(battery())
             else -> result.notImplemented()
         }
     }
@@ -87,6 +89,12 @@ class SacralinkDeviceCapsPlugin : FlutterPlugin, MethodChannel.MethodCallHandler
             if (r.min < 1f) m["opticalZoomFactors"] = listOf(r.min.toDouble(), 1.0)
             m
         }
+    }
+
+    private fun battery(): Map<String, Any> {
+        val bm = context.getSystemService(Context.BATTERY_SERVICE) as BatteryManager
+        val capacity = bm.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY)
+        return mapOf("level" to (if (capacity in 0..100) capacity / 100.0 else -1.0), "charging" to bm.isCharging)
     }
 
     private fun thermal(): String {

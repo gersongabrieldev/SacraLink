@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:math';
 
-import 'package:battery_plus/battery_plus.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_webrtc/flutter_webrtc.dart';
@@ -30,7 +29,6 @@ class CameraSession extends ChangeNotifier {
   final ServerApi api;
   final _priority = LocalPriority();
   final _results = ResultCache();
-  final _battery = Battery();
 
   // Estado público ------------------------------------------------------------
   final renderer = RTCVideoRenderer();
@@ -443,10 +441,9 @@ class CameraSession extends ChangeNotifier {
       );
 
   Future<void> _tick() async {
-    try {
-      batteryLevel = (await _battery.batteryLevel) / 100;
-      charging = (await _battery.batteryState) == BatteryState.charging || (await _battery.batteryState) == BatteryState.full;
-    } catch (_) {}
+    final (level, isCharging) = await DeviceCaps.battery();
+    batteryLevel = level;
+    charging = isCharging;
     thermal = await DeviceCaps.thermal();
     if (_publisher?.active ?? false) {
       stats = await _publisher!.stats();

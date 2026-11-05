@@ -62,6 +62,19 @@ class DeviceCaps {
     }
   }
 
+  /// Bateria: (nível 0..1 ou null se desconhecido, carregando).
+  static Future<(double?, bool)> battery() async {
+    try {
+      final m = await _channel.invokeMapMethod<String, dynamic>('battery') ?? const {};
+      final level = (m['level'] as num?)?.toDouble() ?? -1;
+      return (level < 0 ? null : level, m['charging'] as bool? ?? false);
+    } on PlatformException {
+      return (null, false);
+    } on MissingPluginException {
+      return (null, false);
+    }
+  }
+
   /// Estado térmico: nominal | fair | serious | critical | unknown.
   static Future<String> thermal() async {
     try {

@@ -17,6 +17,11 @@ public class SacralinkDeviceCapsPlugin: NSObject, FlutterPlugin {
       result(lenses())
     case "thermal":
       result(thermal())
+    case "battery":
+      let device = UIDevice.current
+      device.isBatteryMonitoringEnabled = true
+      let charging = device.batteryState == .charging || device.batteryState == .full
+      result(["level": Double(device.batteryLevel), "charging": charging])
     default:
       result(FlutterMethodNotImplemented)
     }

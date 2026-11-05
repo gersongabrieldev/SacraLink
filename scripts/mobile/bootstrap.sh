@@ -49,7 +49,7 @@ if [ -x /usr/libexec/PlistBuddy ]; then
 else
   # Fora do macOS: aplica as chaves com sed (o Info.plist é XML simples).
   if ! grep -q NSCameraUsageDescription "$PLIST"; then
-    sedi 's#<dict>#<dict>\
+    sedi '0,/<dict>/s#<dict>#<dict>\
 	<key>NSCameraUsageDescription</key>\
 	<string>O SacraLink usa a câmera para transmitir o vídeo ao computador da igreja.</string>\
 	<key>NSMicrophoneUsageDescription</key>\
