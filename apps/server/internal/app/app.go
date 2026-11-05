@@ -324,3 +324,6 @@ func (a *App) systemBrief() map[string]any {
 		"live": a.bridge.Live(),
 	}
 }
+
+// RestartMedia reinicia o servidor de mídia (bandeja e painel).
+func (a *App) RestartMedia() { a.sup.Restart() }

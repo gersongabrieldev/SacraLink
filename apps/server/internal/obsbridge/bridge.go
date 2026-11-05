@@ -369,6 +369,9 @@ func (b *Bridge) session(ctx context.Context, cfg Config) error {
 		select {
 		case <-ctx.Done():
 			return nil
+		case <-b.reconfig:
+			// Configuração alterada (inclusive durante o handshake): reconecta.
+			return nil
 		case ev, ok := <-c.Events():
 			if !ok {
 				return c.Err()

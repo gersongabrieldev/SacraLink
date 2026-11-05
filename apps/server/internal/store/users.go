@@ -73,3 +73,11 @@ func (s *Store) UpdatePassword(ctx context.Context, id int64, hash string) error
 		hash, s.nowMs(), id)
 	return err
 }
+
+// DeleteAllUsers remove todos os administradores (recuperação de senha pelo
+// comando local "sacralink-server admin reset"). O próximo acesso ao painel
+// volta ao assistente de criação de senha.
+func (s *Store) DeleteAllUsers(ctx context.Context) error {
+	_, err := s.db.ExecContext(ctx, `DELETE FROM users`)
+	return err
+}
