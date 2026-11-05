@@ -35,6 +35,8 @@ jobs:
         run: |
           $v = if ("${{ github.event.inputs.version }}") { "${{ github.event.inputs.version }}" } else { "${{ github.ref_name }}".TrimStart("v") }
           "version=$v" >> $env:GITHUB_OUTPUT
+          $n = ($v -split "-")[0].Split("."); while ($n.Count -lt 4) { $n += "0" }
+          "numeric=$(($n[0..3]) -join ".")" >> $env:GITHUB_OUTPUT
       - name: Build
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Version "${{ steps.ver.outputs.version }}"
@@ -50,7 +52,7 @@ jobs:
         run: |
           $iscc = (Get-Command iscc -ErrorAction SilentlyContinue).Source
           if (-not $iscc) { $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe" }
-          & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" installer/windows/SacraLink.iss
+          & $iscc "/DAppVersion=${{ steps.ver.outputs.version }}" "/DAppVersionNumeric=${{ steps.ver.outputs.numeric }}" installer/windows/SacraLink.iss
           if ($LASTEXITCODE -ne 0) { throw "ISCC falhou" }
           $exe = "installer/windows/Output/SacraLink-Setup-x64.exe"
           $h = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()

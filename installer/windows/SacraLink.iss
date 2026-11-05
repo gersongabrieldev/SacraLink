@@ -1,4 +1,4 @@
-; ============================================================================
+﻿; ============================================================================
 ; SacraLink — instalador Windows (Inno Setup 6)
 ; Gera: SacraLink-Setup-x64.exe
 ;
@@ -11,6 +11,10 @@
 
 #ifndef AppVersion
   #define AppVersion "0.0.0"
+#endif
+; Versão numérica (x.x.x.x) exigida pelos metadados do Windows.
+#ifndef AppVersionNumeric
+  #define AppVersionNumeric "0.0.0.0"
 #endif
 #define AppName "SacraLink"
 #define AppPublisher "SacraLink"
@@ -45,7 +49,7 @@ ArchitecturesInstallIn64BitMode=x64compatible
 PrivilegesRequired=admin
 CloseApplications=force
 RestartApplications=no
-VersionInfoVersion={#AppVersion}
+VersionInfoVersion={#AppVersionNumeric}
 VersionInfoProductName={#AppName}
 VersionInfoDescription=Instalador do SacraLink
 #ifdef Sign
