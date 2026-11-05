@@ -1,0 +1,21 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "SacraLink",
+  "outputfilename": "SacraLink",
+  "frontend:dir": "frontend",
+  "frontend:install": "npm ci",
+  "frontend:build": "npm run build",
+  "frontend:dev:watcher": "npm run dev",
+  "frontend:dev:serverUrl": "auto",
+  "author": {
+    "name": "Gerson Gabriel",
+    "email": "ge16239@gmail.com"
+  },
+  "info": {
+    "companyName": "SacraLink",
+    "productName": "SacraLink",
+    "productVersion": "0.1.0",
+    "copyright": "Copyright © 2026 Gerson Gabriel e colaboradores do SacraLink",
+    "comments": "Sistema de transmissão sem fio para igrejas"
+  }
+}

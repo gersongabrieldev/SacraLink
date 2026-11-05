@@ -62,3 +62,6 @@ apps/mobile/android/app/release/
 *.p12
 .env
 .env.*
+
+# Recursos Windows gerados no build
+*.syso
