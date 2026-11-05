@@ -1,0 +1,64 @@
+# Sistema operacional / editores
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Go
+*.exe
+*.exe~
+*.test
+*.out
+coverage.*
+/apps/server/bin/
+/apps/desktop/build/bin/
+
+# Node / frontend (painel)
+node_modules/
+dist/
+*.tsbuildinfo
+.vite/
+apps/desktop/frontend/package.json.md5
+
+# Dados gerados durante o desenvolvimento
+/.devdata/
+*.db
+*.db-shm
+*.db-wal
+*.log
+
+# Binários de terceiros baixados por scripts (nunca versionados)
+/third_party/bin/
+/apps/server/third_party/
+
+# Saída do instalador
+/installer/windows/Output/
+/dist-release/
+
+# Flutter / Dart
+apps/mobile/.dart_tool/
+apps/mobile/.flutter-plugins
+apps/mobile/.flutter-plugins-dependencies
+apps/mobile/build/
+apps/mobile/.packages
+apps/mobile/ios/Pods/
+apps/mobile/ios/.symlinks/
+apps/mobile/ios/Flutter/Flutter.framework
+apps/mobile/ios/Flutter/Flutter.podspec
+apps/mobile/ios/Flutter/Generated.xcconfig
+apps/mobile/ios/Flutter/flutter_export_environment.sh
+apps/mobile/android/.gradle/
+apps/mobile/android/local.properties
+apps/mobile/android/key.properties
+apps/mobile/android/app/release/
+*.jks
+*.keystore
+
+# Segredos
+*.pfx
+*.p12
+.env
+.env.*
