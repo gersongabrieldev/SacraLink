@@ -345,7 +345,8 @@ func (b *Bridge) handleEvent(ctx context.Context, c *obs.Client, ev obs.Event) {
 		for _, m := range b.mappings {
 			if m.SceneName == d.OldSceneName {
 				m.SceneName = d.SceneName
-				changed = append(changed, m)
+				cp := *m // cópia: o banco escreve UpdatedAt fora do lock
+				changed = append(changed, &cp)
 			}
 		}
 		b.mu.Unlock()
@@ -367,7 +368,8 @@ func (b *Bridge) handleEvent(ctx context.Context, c *obs.Client, ev obs.Event) {
 		for _, m := range b.mappings {
 			if m.InputName == d.OldInputName {
 				m.InputName = d.InputName
-				changed = m
+				cp := *m // cópia: o banco escreve UpdatedAt fora do lock
+				changed = &cp
 			}
 		}
 		b.mu.Unlock()

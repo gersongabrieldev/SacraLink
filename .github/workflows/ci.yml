@@ -124,7 +124,7 @@ jobs:
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
       - name: APK de teste (debug, sem assinatura de loja)
-        run: flutter build apk --debug
+        run: flutter build apk --debug || (echo "nova tentativa: falha transitória ao baixar SDK/NDK"; flutter build apk --debug)
       - uses: actions/upload-artifact@v4
         with:
           name: sacralink-camera-android-debug
