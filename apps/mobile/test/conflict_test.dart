@@ -19,6 +19,8 @@ void main() {
     expect(paramOf('camera.flip'), 'camera');
     expect(paramOf('lens.select'), 'camera');
     expect(paramOf('quality.set'), 'quality');
+    expect(paramsOf('preset.apply'), containsAll(['zoom', 'camera', 'quality']));
+    expect(paramsOf('zoom.set'), ['zoom']);
   });
 
   test('cache de resultados é idempotente e limitado', () {

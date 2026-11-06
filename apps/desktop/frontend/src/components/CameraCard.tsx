@@ -1,13 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  BatteryCharging, BatteryFull, BatteryLow, BatteryMedium, Flashlight, Mic, MicOff, MoreHorizontal, RefreshCw,
+  BatteryCharging, BatteryFull, BatteryLow, BatteryMedium, Bookmark, Flashlight, Mic, MicOff, MoreHorizontal, RefreshCw,
   SwitchCamera, Thermometer, ZoomIn, ZoomOut,
 } from 'lucide-react';
 import { ApiError } from '../lib/api';
 import { useStore } from '../lib/store';
 import { t } from '../lib/i18n';
 import { formatBitrate, formatDuration, formatResolution, signalBars } from '../lib/format';
-import type { CameraView, CommandResult, MediaProfile } from '../lib/types';
+import type { CameraView, CommandResult, MediaProfile, Preset } from '../lib/types';
 import { WhepVideo } from './WhepVideo';
 import { Confirm } from './ui';
 
@@ -36,6 +36,8 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
   const { api, state, dispatch, notify, run } = useStore();
   const [confirmProgram, setConfirmProgram] = useState(false);
   const [menu, setMenu] = useState(false);
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [presetName, setPresetName] = useState('');
   const [now, setNow] = useState(Date.now());
   const [zoom, setZoom] = useState(cam.zoom ?? 1);
   const zoomTimer = useRef<number>(undefined);
@@ -56,6 +58,29 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
   const command = async (name: string, params: Record<string, unknown> = {}, force = false) => {
     const r = await run(() => api.post<CommandResult>(`/api/v1/cameras/${cam.id}/commands`, { name, params, force }));
     if (r && r.status !== 'executed') notify(r.status === 'conflict' ? 'warn' : 'error', `${cam.name}: ${t(`cmd.${r.status}`)}${r.message ? ` (${r.message})` : ''}`);
+  };
+
+  useEffect(() => {
+    if (menu) api.get<Preset[]>(`/api/v1/cameras/${cam.id}/presets`).then(setPresets).catch(() => {});
+  }, [menu, api, cam.id]);
+
+  const applyPreset = async (p: Preset) => {
+    const r = await run(() => api.post<CommandResult>(`/api/v1/cameras/${cam.id}/presets/${p.id}/apply`));
+    if (r && r.status !== 'executed') notify(r.status === 'conflict' ? 'warn' : 'error', `${cam.name}: ${t(`cmd.${r.status}`)}`);
+    else if (r) notify('success', `Preset "${p.name}" aplicado em ${cam.name}`);
+  };
+  const savePreset = async () => {
+    const name = presetName.trim();
+    if (!name) return;
+    const created = await run(() => api.post<Preset>(`/api/v1/cameras/${cam.id}/presets`, { name, fromCurrent: true }), `Preset "${name}" salvo`);
+    if (created) {
+      setPresets((ps) => [...ps, created]);
+      setPresetName('');
+    }
+  };
+  const deletePreset = async (p: Preset) => {
+    await run(() => api.del(`/api/v1/cameras/${cam.id}/presets/${p.id}`));
+    setPresets((ps) => ps.filter((x) => x.id !== p.id));
   };
 
   const sendZoom = (v: number) => {
@@ -181,6 +206,33 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
                       <option key={p.id} value={p.id}>{p.name}</option>
                     ))}
                   </select>
+                </div>
+                <div className="px-2 py-1">
+                  <div className="label">Presets</div>
+                  {presets.map((p) => (
+                    <div key={p.id} className="flex items-center gap-1 py-0.5">
+                      <button
+                        className="flex flex-1 items-center gap-1.5 truncate rounded px-1 py-1 text-left hover:bg-surface-2 disabled:opacity-40"
+                        disabled={!cam.controlConnected}
+                        onClick={() => applyPreset(p)}
+                        title={p.params.zoom ? `Aplicar (zoom ${p.params.zoom.toFixed(1)}×)` : 'Aplicar'}
+                      >
+                        <Bookmark size={13} /> <span className="truncate">{p.name}</span>
+                      </button>
+                      <button className="px-1 text-muted hover:text-onair" onClick={() => deletePreset(p)} aria-label={`Remover preset ${p.name}`}>
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                  <div className="mt-1 flex gap-1">
+                    <input
+                      className="input py-1 text-xs" placeholder="Nome (ex.: plano fechado)" maxLength={40} value={presetName}
+                      onChange={(e) => setPresetName(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && savePreset()}
+                    />
+                    <button className="btn-ghost px-2 text-xs" disabled={!cam.controlConnected || !presetName.trim()} onClick={savePreset} title="Salvar a posição atual da câmera">
+                      Salvar
+                    </button>
+                  </div>
                 </div>
                 <MenuItem icon={<SwitchCamera size={14} />} label="Alternar frontal/traseira" onClick={() => command('camera.flip')} disabled={!cam.controlConnected} />
                 {cam.capabilities?.torch && <MenuItem icon={<Flashlight size={14} />} label={cam.torch ? 'Desligar lanterna' : 'Ligar lanterna'} onClick={() => command('torch.set', { on: !cam.torch })} />}

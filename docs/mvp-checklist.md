@@ -36,5 +36,4 @@ do OBS Studio real ainda precisam de validação manual (ver
 - PoC de latência RTSP × WHEP ([poc-ingestao.md](obs/poc-ingestao.md)).
 - Descoberta automática por mDNS ("Localizar servidor na rede"): não
   implementada; o pareamento usa QR Code ou código manual.
-- Presets de câmera (`camera_presets` existe no banco; telas e API pendentes).
 - Assinatura de código ([assinatura.md](installation/assinatura.md)).

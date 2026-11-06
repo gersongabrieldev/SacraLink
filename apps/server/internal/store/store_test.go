@@ -211,3 +211,41 @@ func TestBloqueioDeLogin(t *testing.T) {
 		t.Fatalf("desbloqueio não aplicado: %+v", u3)
 	}
 }
+
+func TestPresets(t *testing.T) {
+	s := openTest(t)
+	ctx := context.Background()
+	_, c, err := pair(t, s, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	zoom, lens := 2.5, "0"
+	p, err := s.CreatePreset(ctx, c.ID, "Altar fechado", PresetParams{Zoom: &zoom, LensID: &lens})
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := s.GetPreset(ctx, c.ID, p.ID)
+	if err != nil || *got.Params.Zoom != 2.5 || got.Params.ProfileID != nil {
+		t.Fatalf("preset lido: %+v %v", got, err)
+	}
+	// Outra câmera não acessa o preset.
+	_, c2, _ := pair(t, s, "")
+	if _, err := s.GetPreset(ctx, c2.ID, p.ID); !errors.Is(err, ErrNotFound) {
+		t.Fatalf("isolamento entre câmeras: %v", err)
+	}
+	for i := 1; i < MaxPresetsPerCamera; i++ {
+		if _, err := s.CreatePreset(ctx, c.ID, "x", PresetParams{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if _, err := s.CreatePreset(ctx, c.ID, "excesso", PresetParams{}); !errors.Is(err, ErrTooManyPresets) {
+		t.Fatalf("limite: %v", err)
+	}
+	if err := s.DeletePreset(ctx, c.ID, p.ID); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := s.ListPresets(ctx, c.ID)
+	if len(list) != MaxPresetsPerCamera-1 {
+		t.Fatalf("lista: %d", len(list))
+	}
+}

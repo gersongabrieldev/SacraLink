@@ -40,7 +40,6 @@ String paramOf(String command) {
     case 'audio.mute':
       return 'mic';
     case 'quality.set':
-    case 'preset.apply':
       return 'quality';
     case 'focus.point':
     case 'exposure.point':
@@ -48,6 +47,10 @@ String paramOf(String command) {
   }
   return command;
 }
+
+/// Todos os parâmetros afetados por um comando (um preset altera vários).
+List<String> paramsOf(String command) =>
+    command == 'preset.apply' ? const ['camera', 'zoom', 'quality', 'torch', 'mic'] : [paramOf(command)];
 
 /// Cache de resultados por commandId (idempotência).
 class ResultCache {

@@ -355,7 +355,7 @@ class CameraSession extends ChangeNotifier {
       r = result('rejected', 'sessão diferente');
     } else if (commandExpired(issuedAt: (cmd['issuedAt'] as num?)?.toInt() ?? 0, expiresAt: (cmd['expiresAt'] as num?)?.toInt() ?? 0, receivedAt: receivedAt)) {
       r = result('expired');
-    } else if (_priority.locked(paramOf(name)) && cmd['force'] != true) {
+    } else if (paramsOf(name).any(_priority.locked) && cmd['force'] != true) {
       r = result('conflict', 'o operador do celular está ajustando este controle');
     } else {
       try {
@@ -401,6 +401,24 @@ class CameraSession extends ChangeNotifier {
       case 'quality.set':
         await setProfile(QualityProfile.fromJson(p), local: false);
         return true;
+      case 'preset.apply':
+        {
+          final presetLens = p['lensId'];
+          if (presetLens is String && lenses.any((l) => l.id == presetLens) && presetLens != lensId) {
+            await selectLens(presetLens, local: false);
+          }
+          final presetProfile = p['profile'];
+          if (presetProfile is Map<String, dynamic>) {
+            await setProfile(QualityProfile.fromJson(presetProfile), local: false);
+          }
+          final presetZoom = p['zoom'];
+          if (presetZoom is num) await setZoom(presetZoom.toDouble(), local: false);
+          final presetTorch = p['torch'];
+          if (presetTorch is bool && _hasTorch) await setTorch(presetTorch, local: false);
+          final presetMic = p['micMuted'];
+          if (presetMic is bool) setMicMuted(presetMic, local: false);
+          return true;
+        }
       case 'stream.reconnect':
         if (_wantLive) {
           await _publisher?.stop();
@@ -416,6 +434,7 @@ class CameraSession extends ChangeNotifier {
         'zoom.set' || 'zoom.step' => 'Zoom ajustado pelo operador',
         'lens.select' || 'camera.flip' => 'Câmera trocada pelo operador',
         'quality.set' => 'Qualidade alterada pelo operador',
+        'preset.apply' => 'Preset aplicado pelo operador',
         'audio.mute' => 'Microfone alterado pelo operador',
         _ => 'Ajuste remoto aplicado',
       };

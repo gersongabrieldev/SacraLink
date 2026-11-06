@@ -92,7 +92,7 @@ reais (ex.: câmera virtual do iPhone). Sem ele, o painel não promete zoom ópt
 | `audio.mute` | `muted` |
 | `quality.set` | `profileId` + valores resolvidos pelo servidor (`width`, `height`, `fps`, `maxBitrateKbps`, `minBitrateKbps`, `adaptive`) |
 | `stream.reconnect` | — |
-| `preset.apply` | `presetId` |
+| `preset.apply` | `presetId` + ajustes resolvidos pelo servidor: `lensId?`, `zoom?`, `profile?` (perfil completo), `torch?`, `micMuted?` |
 
 O servidor valida nome e parâmetros (lista de permissão) **antes** de enviar.
 
@@ -117,5 +117,6 @@ O servidor valida nome e parâmetros (lista de permissão) **antes** de enviar.
    a partir do recebimento (os relógios do celular e do PC podem divergir).
 4. **Conflito:** controles locais sempre funcionam e dão ao operador do
    celular prioridade de 3 s sobre aquele parâmetro; `force: true` (confirmado
-   pelo operador central) ignora a prioridade.
+   pelo operador central) ignora a prioridade. Um preset altera vários
+   controles e é recusado se qualquer um deles estiver com prioridade local.
 5. **Capacidades reais:** comandos para recursos inexistentes → `unsupported`.

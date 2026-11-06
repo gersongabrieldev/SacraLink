@@ -38,6 +38,7 @@ O protocolo de controle em tempo real está em
 | `media_starting` | 503 | Servidor de mídia iniciando (`Retry-After`) |
 | `device_revoked`, `device_blocked` | 403 | Aparelho desautorizado |
 | `pairing_invalid` | 401 | Token de pareamento inválido/expirado/usado |
+| `too_many_presets` | 409 | Câmera com 20 presets |
 
 ## Admin API (`/api/v1`)
 
@@ -71,6 +72,8 @@ Proteções: escuta só em 127.0.0.1; `Host` obrigatório `127.0.0.1:7380`/
 | `POST /cameras/{id}/commands {name, params, force}` | Comando remoto → resultado confirmado |
 | `POST /cameras/{id}/zoom\|lens\|quality` | Atalhos da especificação |
 | `GET /cameras/{id}/metrics?since=` | Métricas (amostras de 10 s) |
+| `GET /cameras/{id}/presets` · `POST /cameras/{id}/presets {name, fromCurrent | params}` · `DELETE /cameras/{id}/presets/{pid}` | Presets (até 20 por câmera; `fromCurrent` usa a telemetria do celular) |
+| `POST /cameras/{id}/presets/{pid}/apply {force?}` | Aplica o preset no celular → resultado confirmado |
 | `GET /obs/status` · `GET /obs/detect` | Estado / instalação local do OBS |
 | `GET /obs/config` · `PUT /obs/config` · `POST /obs/config/import` | Conexão com o obs-websocket |
 | `GET /obs/scenes` | Cenas e câmeras visíveis em cada uma |

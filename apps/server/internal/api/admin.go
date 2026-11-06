@@ -176,6 +176,10 @@ func (s *Server) AdminHandler() http.Handler {
 	m.HandleFunc("POST /api/v1/cameras/{id}/lens", a(s.commandAlias("lens")))
 	m.HandleFunc("POST /api/v1/cameras/{id}/quality", a(s.commandAlias("quality")))
 	m.HandleFunc("GET /api/v1/cameras/{id}/metrics", a(s.cameraMetrics))
+	m.HandleFunc("GET /api/v1/cameras/{id}/presets", a(s.listPresets))
+	m.HandleFunc("POST /api/v1/cameras/{id}/presets", a(s.createPreset))
+	m.HandleFunc("DELETE /api/v1/cameras/{id}/presets/{pid}", a(s.deletePreset))
+	m.HandleFunc("POST /api/v1/cameras/{id}/presets/{pid}/apply", a(s.applyPreset))
 
 	m.HandleFunc("GET /api/v1/obs/status", a(s.obsStatus))
 	m.HandleFunc("GET /api/v1/obs/detect", a(s.obsDetect))

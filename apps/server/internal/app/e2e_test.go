@@ -244,6 +244,22 @@ func TestPontaAPonta(t *testing.T) {
 		t.Fatalf("zoom: %d %+v", st, res)
 	}
 
+	// 10b) Preset: salva a posição atual (zoom 2,5×), muda o zoom e reaplica.
+	var preset struct {
+		ID     string
+		Params struct{ Zoom float64 }
+	}
+	if st := admin.do("POST", camPath+"/presets", map[string]any{"name": "Plano fechado", "fromCurrent": true}, &preset); st != 201 || preset.Params.Zoom != 2.5 {
+		t.Fatalf("preset: %d %+v", st, preset)
+	}
+	admin.do("POST", camPath+"/zoom", map[string]any{"value": 1.0}, &res)
+	if st := admin.do("POST", camPath+"/presets/"+preset.ID+"/apply", map[string]any{}, &res); st != 200 || res.Status != "executed" || res.State["zoom"] != 2.5 {
+		t.Fatalf("aplicar preset: %d %+v", st, res)
+	}
+	if st := admin.do("POST", camPath+"/presets/pinexistente/apply", map[string]any{}, nil); st != 400 {
+		t.Fatalf("preset inexistente deveria ser recusado: %d", st)
+	}
+
 	// 11) Player WHEP para Browser Source.
 	resp, err := http.Get(a.AdminURL() + "/player/" + creds.CameraID)
 	if err != nil || resp.StatusCode != 200 {

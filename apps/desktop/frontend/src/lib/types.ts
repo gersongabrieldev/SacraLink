@@ -226,3 +226,11 @@ export interface CommandResult {
   message?: string;
   state?: Record<string, unknown>;
 }
+
+export interface Preset {
+  id: string;
+  cameraId: string;
+  name: string;
+  params: { lensId?: string; zoom?: number; profileId?: string; torch?: boolean; micMuted?: boolean };
+  createdAt: number;
+}

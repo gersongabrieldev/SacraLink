@@ -50,6 +50,7 @@ var errorMap = []struct {
 	{store.ErrNotFound, http.StatusNotFound, "not_found"},
 	{store.ErrPairingInvalid, http.StatusUnauthorized, "pairing_invalid"},
 	{store.ErrCameraTaken, http.StatusConflict, "camera_taken"},
+	{store.ErrTooManyPresets, http.StatusConflict, "too_many_presets"},
 	{devices.ErrUnauthorized, http.StatusUnauthorized, "unauthorized"},
 	{devices.ErrRevoked, http.StatusForbidden, "device_revoked"},
 	{devices.ErrBlocked, http.StatusForbidden, "device_blocked"},

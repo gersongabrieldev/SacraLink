@@ -154,6 +154,18 @@ func (c *Core) Command(ctx context.Context, actor, cameraID, name string, params
 			}
 			params["profileId"] = id
 		}
+	case control.CmdPresetApply:
+		id, _ := params["presetId"].(string)
+		preset, err := c.opt.Store.GetPreset(ctx, cameraID, id)
+		if err != nil {
+			return control.CommandResult{}, fmt.Errorf("%w: preset desconhecido para esta câmera", control.ErrInvalidCommand)
+		}
+		resolved, err := c.presetParams(ctx, preset.Params)
+		if err != nil {
+			return control.CommandResult{}, err
+		}
+		params = resolved
+		params["presetId"] = id
 	}
 	if c.ctrl == nil {
 		return control.CommandResult{Status: control.ResultOffline}, nil
@@ -284,4 +296,51 @@ func (c *Core) runFallback(ctx context.Context, cameraID string, cfg settings.Fa
 	}
 	_ = c.opt.Store.Audit(ctx, "sistema", "obs.fallback", cameraID, "", true, scene)
 	c.event(ctx, "warn", "fallback_applied", cameraID, fmt.Sprintf("troca automática: %s caiu, Program alterado para %q", name, scene))
+}
+
+// presetParams converte um preset nos parâmetros enviados ao celular (o
+// perfil de qualidade é resolvido aqui, como em quality.set).
+func (c *Core) presetParams(ctx context.Context, p store.PresetParams) (map[string]any, error) {
+	out := map[string]any{}
+	if p.LensID != nil {
+		out["lensId"] = *p.LensID
+	}
+	if p.Zoom != nil {
+		out["zoom"] = *p.Zoom
+	}
+	if p.Torch != nil {
+		out["torch"] = *p.Torch
+	}
+	if p.MicMuted != nil {
+		out["micMuted"] = *p.MicMuted
+	}
+	if p.ProfileID != nil {
+		prof, err := c.opt.Store.GetProfile(ctx, *p.ProfileID)
+		if err != nil {
+			return nil, fmt.Errorf("%w: o perfil do preset não existe mais", control.ErrInvalidCommand)
+		}
+		out["profile"] = profileMap(prof)
+	}
+	return out, nil
+}
+
+// PresetFromCurrent captura os ajustes atuais da câmera (informados pela
+// telemetria do celular) para salvar como preset.
+func (c *Core) PresetFromCurrent(cameraID string) (store.PresetParams, error) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	s := c.cams[cameraID]
+	if s == nil {
+		return store.PresetParams{}, ErrUnknownCamera
+	}
+	if !s.controlConnected || s.tel.Camera == nil {
+		return store.PresetParams{}, fmt.Errorf("%w: a câmera precisa estar conectada para salvar a posição atual", control.ErrInvalidCommand)
+	}
+	t := s.tel.Camera
+	zoom, lens, torch, mic, prof := t.Zoom, t.LensID, t.Torch, t.MicMuted, s.cam.ProfileID
+	p := store.PresetParams{Zoom: &zoom, Torch: &torch, MicMuted: &mic, ProfileID: &prof}
+	if lens != "" {
+		p.LensID = &lens
+	}
+	return p, nil
 }

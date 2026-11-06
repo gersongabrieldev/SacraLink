@@ -107,6 +107,7 @@ func Connect(ctx context.Context, c *Credentials) (*Control, error) {
 	}
 	go ctl.loop()
 	go ctl.heartbeat()
+	ctl.sendTelemetry(1)
 	return ctl, nil
 }
 
@@ -159,11 +160,15 @@ func (c *Control) loop() {
 			if v, ok := cmd.Params["value"].(float64); ok && cmd.Name == control.CmdZoomSet {
 				c.zoom = v
 			}
+			if v, ok := cmd.Params["zoom"].(float64); ok && cmd.Name == control.CmdPresetApply {
+				c.zoom = v
+			}
 			zoom := c.zoom
 			c.mu.Unlock()
 			_ = c.send(context.Background(), control.MsgCommandResult, control.CommandResult{
 				CommandID: cmd.CommandID, Status: control.ResultExecuted, State: map[string]any{"zoom": zoom},
 			})
+			c.sendTelemetry(zoom)
 		}
 	}
 }
@@ -335,4 +340,14 @@ func (p *Publisher) Close() {
 		}
 	}
 	p.pc.Close()
+}
+
+// sendTelemetry informa o estado da câmera simulada (como o app real faz a
+// cada 2 s), permitindo salvar presets a partir da posição atual.
+func (c *Control) sendTelemetry(zoom float64) {
+	_ = c.send(context.Background(), control.MsgTelemetry, map[string]any{
+		"camera":  map[string]any{"lensId": "0", "facing": "back", "zoom": zoom},
+		"battery": map[string]any{"level": 0.8, "charging": true},
+		"thermal": "nominal",
+	})
 }
