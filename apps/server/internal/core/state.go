@@ -174,11 +174,15 @@ func (c *camState) view(src obsbridge.SourceStatus) CameraView {
 		ID: c.cam.ID, Slot: c.cam.Slot, Name: c.cam.Name, OperatorName: c.cam.OperatorName,
 		ProfileID: c.cam.ProfileID, IngestMode: c.cam.IngestMode, IsBackup: c.cam.IsBackup,
 		AudioSyncOffsetMs: c.cam.AudioSyncOffsetMs, MediaPath: c.cam.MediaPath(),
-		Device: c.device, State: c.state, Tally: c.tally.Label(), Program: c.tally.Program, Preview: c.tally.Preview,
+		State: c.state, Tally: c.tally.Label(), Program: c.tally.Program, Preview: c.tally.Preview,
 		ControlConnected: c.controlConnected, RemoteAddr: c.remoteAddr, Error: c.errorReason,
 		BitrateKbps: c.bitrateKbps, Width: c.width, Height: c.height, VideoCodec: c.codec, HasAudio: c.hasAudio,
 		PacketsLost: c.packetsLost, JitterMs: c.jitterMs,
 		Capabilities: c.caps, OBSSource: src, LastLocal: c.lastLocal, LastCommand: c.lastCommand,
+	}
+	if c.device != nil {
+		d := *c.device // cópia: o OnHello altera o original sob lock
+		v.Device = &d
 	}
 	if src.State == "" {
 		v.OBSSource = obsbridge.SourceStatus{CameraID: c.cam.ID, State: "none"}

@@ -177,6 +177,9 @@ func (c *Core) Command(ctx context.Context, actor, cameraID, name string, params
 	c.mu.Lock()
 	if s := c.cams[cameraID]; s != nil {
 		s.lastCommand = &CommandView{CommandID: res.CommandID, Name: name, Status: res.Status, Message: res.Message, At: time.Now().UnixMilli()}
+		if res.Status == control.ResultExecuted {
+			applyConfirmedState(s, res.State)
+		}
 		c.dirty[cameraID] = true
 	}
 	c.mu.Unlock()
@@ -343,4 +346,33 @@ func (c *Core) PresetFromCurrent(cameraID string) (store.PresetParams, error) {
 		p.LensID = &lens
 	}
 	return p, nil
+}
+
+// applyConfirmedState atualiza o estado da câmera com os valores confirmados
+// pelo aparelho no resultado do comando (mais atual que a última telemetria,
+// enviada a cada 2 s). Chamar com c.mu travado.
+func applyConfirmedState(s *camState, st map[string]any) {
+	if len(st) == 0 {
+		return
+	}
+	cam := s.tel.Camera
+	if cam == nil {
+		cam = &control.CameraTelemetry{}
+	} else {
+		cp := *cam // a telemetria pode estar sendo serializada: não alterar o original
+		cam = &cp
+	}
+	if v, ok := st["zoom"].(float64); ok {
+		cam.Zoom = v
+	}
+	if v, ok := st["lensId"].(string); ok && v != "" {
+		cam.LensID = v
+	}
+	if v, ok := st["torch"].(bool); ok {
+		cam.Torch = v
+	}
+	if v, ok := st["micMuted"].(bool); ok {
+		cam.MicMuted = v
+	}
+	s.tel.Camera = cam
 }

@@ -107,17 +107,20 @@ type Telemetry struct {
 		JitterMs      float64 `json:"jitterMs"`
 		AvailableKbps float64 `json:"availableKbps"`
 	} `json:"stream,omitempty"`
-	Camera *struct {
-		LensID   string  `json:"lensId"`
-		Facing   string  `json:"facing"`
-		Zoom     float64 `json:"zoom"`
-		Torch    bool    `json:"torch"`
-		MicMuted bool    `json:"micMuted"`
-	} `json:"camera,omitempty"`
+	Camera  *CameraTelemetry `json:"camera,omitempty"`
 	Network *struct {
 		Type    string `json:"type"` // wifi | cellular | ethernet | none
 		Quality string `json:"quality,omitempty"`
 	} `json:"network,omitempty"`
+}
+
+// CameraTelemetry é o estado atual da câmera no aparelho.
+type CameraTelemetry struct {
+	LensID   string  `json:"lensId"`
+	Facing   string  `json:"facing"`
+	Zoom     float64 `json:"zoom"`
+	Torch    bool    `json:"torch"`
+	MicMuted bool    `json:"micMuted"`
 }
 
 // LocalChange informa uma alteração feita pelo operador no próprio celular.
