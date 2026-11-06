@@ -18,8 +18,8 @@ Não é necessário instalar Go, Node.js, Python, Docker ou WSL.
    o SHA-256 em `SHA256SUMS.txt`.
 2. Execute o instalador (pede permissão de administrador).
 3. Mantenha marcado **Configurar o Firewall do Windows** — cria apenas:
-   TCP 7443 (aparelhos) e UDP/TCP 8189 (mídia WebRTC), para redes privadas
-   e de domínio. O painel e o OBS continuam acessíveis só no próprio PC.
+   TCP 7443 (aparelhos), UDP/TCP 8189 (mídia WebRTC) e UDP 5353 (descoberta
+   na rede local), para redes privadas e de domínio. O painel e o OBS continuam acessíveis só no próprio PC.
 4. Ao final, abra o SacraLink. O assistente pede:
    - nome da igreja e **senha do administrador**;
    - conexão com o OBS (botão *Importar configuração do OBS deste PC*);

@@ -109,6 +109,7 @@ export interface Settings {
   firstRunComplete: boolean;
   maxStreams: number;
   iceTcp: boolean;
+  mdns: boolean;
   previewMode: 'all' | 'selected' | 'off';
   language: string;
   theme: 'dark' | 'light';

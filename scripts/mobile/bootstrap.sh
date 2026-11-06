@@ -26,6 +26,7 @@ if ! grep -q 'android.permission.CAMERA' "$MANIFEST"; then
   PERMS='    <uses-permission android:name="android.permission.INTERNET"/>\
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE"/>\
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>\
+    <uses-permission android:name="android.permission.CHANGE_WIFI_MULTICAST_STATE"/>\
     <uses-permission android:name="android.permission.CAMERA"/>\
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>\
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS"/>\
@@ -48,6 +49,8 @@ if [ -x /usr/libexec/PlistBuddy ]; then
   pb "Add :NSCameraUsageDescription string O SacraLink usa a câmera para transmitir o vídeo ao computador da igreja."
   pb "Add :NSMicrophoneUsageDescription string O SacraLink usa o microfone para transmitir o áudio da celebração."
   pb "Add :NSLocalNetworkUsageDescription string O SacraLink se conecta ao computador da igreja na rede local."
+  pb "Add :NSBonjourServices array"
+  pb "Add :NSBonjourServices:0 string _sacralink._tcp"
   pb "Set :CFBundleDisplayName SacraLink"
   pb "Add :UIRequiresFullScreen bool true"
   pb "Add :UIApplicationSupportsIndirectInputEvents bool true"
@@ -61,7 +64,9 @@ else
 	<key>NSMicrophoneUsageDescription</key>\
 	<string>O SacraLink usa o microfone para transmitir o áudio da celebração.</string>\
 	<key>NSLocalNetworkUsageDescription</key>\
-	<string>O SacraLink se conecta ao computador da igreja na rede local.</string>#' "$PLIST"
+	<string>O SacraLink se conecta ao computador da igreja na rede local.</string>\
+	<key>NSBonjourServices</key>\
+	<array><string>_sacralink._tcp</string></array>#' "$PLIST"
   fi
   echo "ios configurado (Info.plist via sed)"
 fi

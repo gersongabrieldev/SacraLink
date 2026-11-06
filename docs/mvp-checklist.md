@@ -34,6 +34,4 @@ do OBS Studio real ainda precisam de validação manual (ver
 - Validação com OBS Studio real, Android e iPhone (itens 4, 5, 7, 8, 13, 14).
 - Primeira release com instalador e teste em VM.
 - PoC de latência RTSP × WHEP ([poc-ingestao.md](obs/poc-ingestao.md)).
-- Descoberta automática por mDNS ("Localizar servidor na rede"): não
-  implementada; o pareamento usa QR Code ou código manual.
 - Assinatura de código ([assinatura.md](installation/assinatura.md)).

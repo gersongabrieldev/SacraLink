@@ -54,6 +54,7 @@ func serve() int {
 	devicePort := fs.Int("device-port", def.DevicePort, "porta da API dos dispositivos (TLS)")
 	mediaExe := fs.String("mediamtx", "", "caminho do mediamtx.exe")
 	noTray := fs.Bool("no-tray", false, "não exibir ícone na bandeja")
+	noMDNS := fs.Bool("no-mdns", false, "não anunciar o servidor na rede local (mDNS)")
 	dev := fs.Bool("dev", false, "modo desenvolvimento (log no console, aceita origem do Vite)")
 	level := fs.String("log-level", "info", "nível de log: debug, info, warn, error")
 	_ = fs.Bool("background", false, "iniciado automaticamente com o Windows")
@@ -102,6 +103,7 @@ func serve() int {
 	cfg.DataDir, cfg.AdminPort, cfg.DevicePort, cfg.MediaExe, cfg.DevOrigins, cfg.Logger = *dataDir, *adminPort, *devicePort, *mediaExe, *dev, log
 	cfg.DashboardDir = filepath.Join(filepath.Dir(exe), "dashboard")
 	cfg.DeviceHost, cfg.ICEListenHost = *deviceHost, *iceHost
+	cfg.MDNS = !*noMDNS && *deviceHost == ""
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
@@ -215,6 +217,7 @@ func firewallCmd(args []string) int {
 		fmt.Sprintf("%sDispositivos (TCP %d)", platform.FirewallRulePrefix, *devicePort),
 		fmt.Sprintf("%sMídia WebRTC (UDP %d)", platform.FirewallRulePrefix, *icePort),
 		fmt.Sprintf("%sMídia WebRTC (TCP %d)", platform.FirewallRulePrefix, *icePort),
+		platform.FirewallRulePrefix + "Descoberta na rede (UDP 5353)",
 	}
 	switch args[0] {
 	case "apply":
@@ -225,6 +228,7 @@ func firewallCmd(args []string) int {
 		rules := []platform.FirewallRule{
 			{Name: names[0], Program: *serverExe, Protocol: "TCP", Port: *devicePort, Profile: *profile},
 			{Name: names[1], Program: *mediaExe, Protocol: "UDP", Port: *icePort, Profile: *profile},
+			{Name: names[3], Program: *serverExe, Protocol: "UDP", Port: 5353, Profile: *profile},
 		}
 		if *iceTCP {
 			rules = append(rules, platform.FirewallRule{Name: names[2], Program: *mediaExe, Protocol: "TCP", Port: *icePort, Profile: *profile})

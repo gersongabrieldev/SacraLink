@@ -12,6 +12,9 @@ App Flutter que transforma o celular em câmera sem fio do SacraLink.
   foco/exposição por toque; lanterna; microfone; qualidade.
 - Controle remoto pelo operador central com confirmação e política de
   conflito (ver [contrato](../../packages/contracts/control-v1.md)).
+- **Localizar servidor na rede** (mDNS): celulares já pareados reencontram o
+  computador da igreja se o IP mudar; a identidade é confirmada pelo pinning.
+  O pareamento em si é sempre pelo QR Code.
 - Adaptação a Wi-Fi congestionado, 4G/5G, aquecimento e bateria; reconexão
   automática na troca de rede; teste de conexão externa.
 

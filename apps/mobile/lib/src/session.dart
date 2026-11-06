@@ -12,6 +12,7 @@ import 'package:wakelock_plus/wakelock_plus.dart';
 import 'adaptive.dart';
 import 'conflict.dart';
 import 'control_channel.dart';
+import 'discovery.dart';
 import 'publisher.dart';
 import 'server_api.dart';
 
@@ -83,7 +84,7 @@ class CameraSession extends ChangeNotifier {
     await WakelockPlus.enable(); // a câmera para com a tela bloqueada (restrição do sistema)
 
     try {
-      baseUrl = await api.reachable(creds.baseUrls, preferred: creds.lastBaseUrl);
+      baseUrl = await _resolveBase();
       creds.lastBaseUrl = baseUrl;
       await CredentialStore().save(creds);
     } on ApiException catch (e) {
@@ -153,6 +154,28 @@ class CameraSession extends ChangeNotifier {
     zoom = minZoom > 1 ? minZoom : 1;
   }
 
+  /// Encontra o servidor: endereços salvos e, se o IP mudou (DHCP), a
+  /// descoberta mDNS pelo mesmo serverId. O pinning confirma a identidade.
+  Future<String> _resolveBase() async {
+    try {
+      return await api.reachable(creds.baseUrls, preferred: creds.lastBaseUrl);
+    } on ApiException {
+      for (final s in await discoverServers()) {
+        if (s.serverId != creds.serverId) continue;
+        try {
+          final base = await api.reachable(s.baseUrls);
+          creds.baseUrls = [...s.baseUrls, ...creds.baseUrls.where((u) => !s.baseUrls.contains(u))];
+          creds.lastBaseUrl = base;
+          await CredentialStore().save(creds);
+          return base;
+        } on ApiException {
+          // anúncio sem o certificado esperado: ignora
+        }
+      }
+      rethrow;
+    }
+  }
+
   // Transmissão ---------------------------------------------------------------
 
   Future<void> startStream() async {
@@ -175,7 +198,7 @@ class CameraSession extends ChangeNotifier {
     streamState = liveSince == null ? StreamState.connecting : StreamState.reconnecting;
     notifyListeners();
     try {
-      baseUrl ??= await api.reachable(creds.baseUrls, preferred: creds.lastBaseUrl);
+      baseUrl ??= await _resolveBase();
       _publisher ??= WhipPublisher(api: api, creds: creds, baseUrl: baseUrl!, onConnection: _onPeer);
       await _publisher!.start(_stream!, profile);
       error = null;

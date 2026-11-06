@@ -4,6 +4,7 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
+import '../discovery.dart';
 import '../pairing.dart';
 import '../server_api.dart';
 import 'camera_screen.dart';
@@ -101,6 +102,47 @@ class _HomeScreenState extends State<HomeScreen> {
     await _load();
   }
 
+  /// Procura servidores SacraLink na rede local. Servidores já pareados
+  /// podem ser abertos (atualizando o IP); os demais exigem o QR Code.
+  Future<void> _locate() async {
+    setState(() {
+      _busy = true;
+      _status = 'Procurando servidores na rede local…';
+    });
+    final found = await discoverServers();
+    if (!mounted) return;
+    setState(() {
+      _busy = false;
+      _status = found.isEmpty ? 'Nenhum servidor encontrado. Confira se o celular está no mesmo Wi-Fi do computador da igreja.' : null;
+    });
+    if (found.isEmpty) return;
+    final paired = {for (final s in _servers) s.serverId: s};
+    await showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: ListView(shrinkWrap: true, padding: const EdgeInsets.all(16), children: [
+          const Text('Servidores na rede', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+          for (final d in found)
+            ListTile(
+              leading: const Icon(Icons.church_outlined, color: SacraColors.accent),
+              title: Text(d.name),
+              subtitle: Text(paired.containsKey(d.serverId)
+                  ? 'Pareado como "${paired[d.serverId]!.cameraName}" · ${d.hosts.first}'
+                  : 'Não pareado: leia o QR Code no painel'),
+              enabled: paired.containsKey(d.serverId),
+              onTap: () async {
+                final c = paired[d.serverId]!;
+                c.baseUrls = [...d.baseUrls, ...c.baseUrls.where((u) => !d.baseUrls.contains(u))];
+                await _store.save(c);
+                if (ctx.mounted) Navigator.pop(ctx);
+                if (mounted) await _open(c);
+              },
+            ),
+        ]),
+      ),
+    );
+  }
+
   Future<void> _forget(ServerCredentials c) async {
     final ok = await showDialog<bool>(
       context: context,
@@ -155,6 +197,13 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: _busy ? null : _scan,
               icon: const Icon(Icons.qr_code_scanner),
               label: const Text('Ler QR Code do servidor'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _busy ? null : _locate,
+              style: OutlinedButton.styleFrom(minimumSize: const Size(48, 52)),
+              icon: const Icon(Icons.wifi_find),
+              label: const Text('Localizar servidor na rede'),
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(

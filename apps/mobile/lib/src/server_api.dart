@@ -37,7 +37,7 @@ class ServerCredentials {
 
   final String serverId;
   final String serverName;
-  final List<String> baseUrls;
+  List<String> baseUrls;
   final String fingerprint;
   final String deviceId;
   final String secret;

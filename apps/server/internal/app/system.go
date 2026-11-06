@@ -65,6 +65,7 @@ func (a *App) firewallRules() []platform.FirewallRule {
 		rules = append(rules, platform.FirewallRule{Name: platform.FirewallRulePrefix + fmt.Sprintf("Mídia WebRTC (TCP %d)", a.cfg.MediaPorts.ICE),
 			Program: a.cfg.MediaExe, Protocol: "TCP", Port: a.cfg.MediaPorts.ICE, Profile: profile})
 	}
+	rules = append(rules, platform.FirewallRule{Name: platform.FirewallRulePrefix + "Descoberta na rede (UDP 5353)", Program: self, Protocol: "UDP", Port: 5353, Profile: profile})
 	return rules
 }
 

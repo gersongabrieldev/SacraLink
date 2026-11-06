@@ -19,6 +19,7 @@ import (
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/control"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/core"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/devices"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/discovery"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/events"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/media"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/netdiag"
@@ -44,7 +45,9 @@ type Config struct {
 	ICEListenHost string
 	DevOrigins    bool
 	DashboardDir  string // build do painel para servir em http://127.0.0.1:7380/ (opcional)
-	Logger        *slog.Logger
+	// MDNS habilita o anúncio na rede local (desligado nos testes).
+	MDNS   bool
+	Logger *slog.Logger
 }
 
 // DefaultConfig retorna a configuração padrão de produção.
@@ -76,6 +79,8 @@ type App struct {
 	netMu  sync.Mutex
 	report *netdiag.Report
 	reach  *netdiag.Reachability
+
+	mdns *discovery.Announcer
 
 	mediaMu  sync.Mutex
 	mediaCfg media.Config
@@ -163,6 +168,7 @@ func (a *App) init(ctx context.Context) error {
 	})
 	a.core.SetOBS(a.bridge)
 	a.devices = devices.New(a.store, a.Endpoints)
+	a.mdns = discovery.New(a.log)
 	a.api = api.New(api.Deps{
 		Store: a.store, Settings: a.settings, Core: a.core, Devices: a.devices, Proxy: a.proxy,
 		Media: a.sup, Events: a.events, System: a, Logger: a.log, AdminPort: a.cfg.AdminPort, DevOrigins: a.cfg.DevOrigins,
@@ -193,6 +199,7 @@ func (a *App) buildMediaConfig(s settings.Settings) media.Config {
 // ApplySettings implementa api.System: reconfigura o MediaMTX somente se a
 // configuração de mídia mudou (reiniciar derruba as transmissões).
 func (a *App) ApplySettings(ctx context.Context, s settings.Settings) {
+	a.applyMDNS(s)
 	next := a.buildMediaConfig(s)
 	a.mediaMu.Lock()
 	changed := fmt.Sprint(next) != fmt.Sprint(a.mediaCfg)
@@ -252,6 +259,8 @@ func (a *App) Run(ctx context.Context) error {
 	errc := make(chan error, 2)
 	go func() { errc <- adminSrv.Serve(adminLn) }()
 	go func() { errc <- deviceSrv.ServeTLS(deviceLn, "", "") }()
+	a.applyMDNS(a.settings.Get())
+	defer a.mdns.Stop()
 	a.log.Info("SacraLink em execução", "painel", a.AdminURL(), "dispositivos", deviceLn.Addr().String(), "dados", a.cfg.DataDir)
 
 	var runErr error
@@ -328,3 +337,15 @@ func (a *App) systemBrief() map[string]any {
 
 // RestartMedia reinicia o servidor de mídia (bandeja e painel).
 func (a *App) RestartMedia() { a.sup.Restart() }
+
+// applyMDNS liga, atualiza ou desliga o anúncio na rede local.
+func (a *App) applyMDNS(s settings.Settings) {
+	if !a.cfg.MDNS || !s.MDNS {
+		a.mdns.Stop()
+		return
+	}
+	err := a.mdns.Start(discovery.Info{ServerID: a.serverID, ServerName: s.ServerName, Port: a.cfg.DevicePort, FingerprintHex: a.identity.FingerprintHex})
+	if err != nil {
+		a.log.Warn("não foi possível anunciar o servidor na rede local", "erro", err)
+	}
+}

@@ -16,6 +16,8 @@ distribuído sob a licença MIT; todas as dependências abaixo são compatíveis
 | github.com/skip2/go-qrcode | QR Code de pareamento | MIT | Compilado |
 | gopkg.in/yaml.v3 | Config do MediaMTX | MIT / Apache-2.0 | Compilado |
 | gopkg.in/natefinch/lumberjack.v2 | Rotação de logs | MIT | Compilado |
+| github.com/libp2p/zeroconf/v2 | Anúncio mDNS/DNS-SD | MIT | Compilado |
+| github.com/miekg/dns | Mensagens DNS (via zeroconf) | BSD-3-Clause | Compilado |
 | github.com/wailsapp/wails/v2 | Painel desktop | MIT | Compilado (requer WebView2 Runtime, redistribuível da Microsoft) |
 | github.com/tc-hib/winres | Ícone/manifesto/versão (build) | 0BSD | Ferramenta de build |
 | React, React DOM | Painel | MIT | Empacotado |
@@ -40,6 +42,7 @@ distribuído sob a licença MIT; todas as dependências abaixo são compatíveis
 | flutter_secure_storage | BSD-3-Clause | |
 | wakelock_plus, connectivity_plus, device_info_plus, package_info_plus | BSD-3-Clause | |
 | crypto | BSD-3-Clause | |
+| bonsoir | MIT | Descoberta mDNS nativa (NSD/Bonjour) |
 
 ## Não redistribuídos
 

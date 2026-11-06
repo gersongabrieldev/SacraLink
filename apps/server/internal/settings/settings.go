@@ -64,23 +64,25 @@ type Audio struct {
 
 // Settings são as configurações da aplicação.
 type Settings struct {
-	ServerName       string   `json:"serverName"`
-	FirstRunComplete bool     `json:"firstRunComplete"`
-	MaxStreams       int      `json:"maxStreams"`
-	ICETCP           bool     `json:"iceTcp"`
-	PreviewMode      string   `json:"previewMode"`
-	Language         string   `json:"language"`
-	Theme            string   `json:"theme"`
-	OBS              OBS      `json:"obs"`
-	Fallback         Fallback `json:"fallback"`
-	Remote           Remote   `json:"remote"`
-	Audio            Audio    `json:"audio"`
+	ServerName       string `json:"serverName"`
+	FirstRunComplete bool   `json:"firstRunComplete"`
+	MaxStreams       int    `json:"maxStreams"`
+	ICETCP           bool   `json:"iceTcp"`
+	// MDNS anuncia o servidor na rede local para celulares já pareados.
+	MDNS        bool     `json:"mdns"`
+	PreviewMode string   `json:"previewMode"`
+	Language    string   `json:"language"`
+	Theme       string   `json:"theme"`
+	OBS         OBS      `json:"obs"`
+	Fallback    Fallback `json:"fallback"`
+	Remote      Remote   `json:"remote"`
+	Audio       Audio    `json:"audio"`
 }
 
 // Defaults retorna as configurações padrão.
 func Defaults() Settings {
 	return Settings{
-		ServerName: "SacraLink", MaxStreams: 8, ICETCP: true, PreviewMode: PreviewAll,
+		ServerName: "SacraLink", MaxStreams: 8, ICETCP: true, MDNS: true, PreviewMode: PreviewAll,
 		Language: "pt-BR", Theme: "dark",
 		Fallback: Fallback{Mode: FallbackStay, GraceSec: 3},
 		Remote:   Remote{PublicPort: 7443},

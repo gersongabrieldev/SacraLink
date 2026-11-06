@@ -109,7 +109,7 @@ e [ADRs](docs/architecture/adr/).
   ([desempenho](docs/performance.md)).
 - Executáveis não assinados podem ser bloqueados pelo Smart App Control
   ([assinatura](docs/installation/assinatura.md)).
-- Descoberta automática na rede (mDNS) ainda não implementada: use o QR Code.
+- O pareamento é sempre pelo QR Code; a descoberta na rede (mDNS) só reencontra servidores já pareados.
 
 ## Roadmap
 

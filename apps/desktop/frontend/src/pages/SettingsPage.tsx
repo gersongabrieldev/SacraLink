@@ -45,6 +45,7 @@ export function SettingsPage() {
             </select>
           </div>
           <Toggle checked={s.iceTcp} onChange={(v) => setS({ ...s, iceTcp: v })} label="Permitir mídia WebRTC sobre TCP" hint="Ajuda em redes que bloqueiam UDP; reinicia o servidor de mídia." />
+          <Toggle checked={s.mdns} onChange={(v) => setS({ ...s, mdns: v })} label="Anunciar o servidor na rede local (mDNS)" hint="Permite que celulares já pareados reencontrem este computador se o IP mudar. O pareamento continua exigindo o QR Code." />
           <button className="btn-primary" onClick={save}>Salvar</button>
         </div>
       </Section>
