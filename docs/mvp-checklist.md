@@ -12,11 +12,11 @@ do OBS Studio real ainda precisam de validação manual (ver
 
 | # | Critério | Status | Evidência / próximo passo |
 |---|---|---|---|
-| 1 | Instalação por `.exe` no Windows | 🟨 | Script Inno Setup + workflow de release prontos; gerar a primeira release e testar em VMs Windows 10/11 limpas |
+| 1 | Instalação por `.exe` no Windows | 🟨 | `SacraLink-Setup-x64.exe` **gerado pelo CI** (artefato privado, 30 MB); falta instalar em VMs Windows 10/11 limpas e assinar |
 | 2 | Serviços iniciam sem Docker/terminal | 🟩 | `sacralink-server.exe` (subsistema GUI, bandeja) executado no Windows 11; supervisor do MediaMTX testado com o binário real |
 | 3 | App mostra estado de funcionamento | 🟩 | Cabeçalho do painel validado visualmente (servidor, OBS, câmeras, IP, CPU/RAM, rede, AO VIVO) |
-| 4 | Android transmite vídeo real por Wi-Fi | 🟨 | App implementado; analisado/compilado no CI; **falta teste em aparelho** |
-| 5 | iPhone transmite vídeo real por Wi-Fi | 🟨 | Idem (build iOS sem assinatura no CI) |
+| 4 | Android transmite vídeo real por Wi-Fi | 🟨 | App analisado, testado e **APK de depuração gerado no CI**; **falta teste em aparelho** |
+| 5 | iPhone transmite vídeo real por Wi-Fi | 🟨 | **Build iOS sem assinatura passou no CI**; falta conta Apple Developer e teste em aparelho |
 | 6 | Servidor recebe os fluxos | 🟩 | Teste ponta a ponta: WHIP com H.264 + Opus reais aceito pelo MediaMTX real (CI Windows e Linux) |
 | 7 | Vídeo reproduzido no OBS em fonte utilizável | 🟨 | RTSP verificado como o OBS consome (DESCRIBE/SETUP/PLAY, 630 pacotes de vídeo + 100 de áudio em 2 s); prévia WHEP decodificada no painel. **Falta validar no OBS Studio real** |
 | 8 | Áudio recebido e controlável | 🟨 | Opus no fluxo e no RTSP (teste); mute/volume/offset via obs-websocket (OBS simulado). **Falta OBS real** |

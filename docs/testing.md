@@ -36,13 +36,20 @@ cd apps/mobile && flutter analyze && flutter test   # app (após scripts/mobile/
 |---|---|
 | Windows 11 Pro (build 26300), Ryzen 3 3300X, 16 GB — máquina do mantenedor | Todos os testes Go e do painel passaram (2026-11-05) |
 | GitHub Actions `windows-latest` | Servidor (inclui ponta a ponta com MediaMTX real), painel e build Windows: **passaram** |
-| GitHub Actions `ubuntu-latest` | Servidor com `-race`, app Flutter (análise, testes, APK) — ver último CI |
-| GitHub Actions `macos-latest` | Build iOS sem assinatura — ver último CI |
+| GitHub Actions `ubuntu-latest` | Servidor com **detector de corridas** (`-race`) e ponta a ponta com MediaMTX real; app Flutter (`flutter analyze`, testes, **APK de depuração**): **passaram** |
+| GitHub Actions `macos-latest` | App Flutter: **build iOS sem assinatura passou** |
+| GitHub Actions (release manual) | **`SacraLink-Setup-x64.exe` gerado** (Inno Setup 6.7.1, 30 MB) como artefato privado; ainda não instalado/testado em VM |
 
 Resultado medido no teste ponta a ponta (MediaMTX v1.21.3 real): o RTSP
 entregue ao "OBS" trouxe **630 pacotes de vídeo e 100 de áudio em 2 s**
 (H.264 + Opus), com bitrate medido no servidor de ~2,8 Mbps — coerente com o
 vídeo sintético I_PCM de 160×96 a 15 FPS.
+
+### Problemas reais encontrados pelo CI e corrigidos
+
+- Condição de corrida ao seguir renomeações feitas no OBS (detectada pelo `-race`).
+- MediaMTX não iniciava quando o SO recusava o buffer UDP de 8 MB (Linux); o supervisor agora volta ao padrão do sistema.
+- Conflitos de dependências do app (`battery_plus` × `wakelock_plus`; `permission_handler` exigindo API 37).
 
 ### Validação manual já feita (sem aparelhos)
 
