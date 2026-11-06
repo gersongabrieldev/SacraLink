@@ -72,12 +72,29 @@ vídeo sintético I_PCM de 160×96 a 15 FPS.
 | Rede 4G/5G, troca Wi-Fi→5G, CGNAT, IPv6 | Exige rede externa real |
 | Instalador | Gerado pelo CI de release; precisa ser testado em VM Windows 10/11 limpa |
 
-## 3. Roteiro de testes manuais
+## 3. Teste automatizado com o OBS Studio real
+
+Com o OBS aberto (WebSocket habilitado) no computador de teste:
+
+```bash
+cd apps/server
+SACRALINK_REAL_OBS=1 go test -run TestOBSReal -v ./internal/app/
+```
+
+Salvaguardas: aborta se o OBS estiver transmitindo ou gravando; cria uma
+coleção de cenas nova ("SacraLink — Teste …") sem tocar nas cenas existentes;
+volta para a coleção original no final. Verifica: conexão autenticada com a
+configuração importada do obs-websocket, criação da fonte, **captura da fonte
+feita pelo próprio OBS com imagem não vazia** (prova de decodificação do
+H.264), tally NO AR vindo do Program real, fonte ativa (`GetSourceActive`) e
+presença no mixer de áudio. A captura é salva em `%TEMP%\sacralink-obs-real-*.png`.
+
+## 4. Roteiro de testes manuais
 
 Registre cada execução em `docs/test-reports/AAAA-MM-DD-<tema>.md` com
 aparelho, versão do SO, versão do OBS, CPU/GPU e rede.
 
-### 3.1 Funcionais (§19.1)
+### 4.1 Funcionais (§19.1)
 
 1. **Instalação:** VM Windows 11 limpa → `SacraLink-Setup-x64.exe` → marcar
    firewall → concluir. Esperado: atalho, bandeja, assistente.
@@ -101,13 +118,13 @@ aparelho, versão do SO, versão do OBS, CPU/GPU e rede.
    RECONECTANDO → volta sozinho; a fonte do OBS volta sem duplicar.
 10. **Persistência:** reiniciar o PC. Esperado: câmeras, fontes e senha mantidas.
 
-### 3.2 OBS (§19.4)
+### 4.2 OBS (§19.4)
 
 OBS fechado (tally "OBS sem conexão"), aberto sem transmitir, Studio Mode,
 transmitindo, gravando, reinício do OBS (reconecta e sincroniza), remoção
 manual da fonte (não recria sem *Recriar fonte*), fonte em cena aninhada.
 
-### 3.3 Rede (§19.3)
+### 4.3 Rede (§19.3)
 
 Wi-Fi 5 GHz, Wi-Fi congestionado, servidor no cabo, 4G, 5G, troca Wi-Fi→5G
 (nova sessão WHIP automática), perda momentânea, IPv4 público com
@@ -115,7 +132,7 @@ encaminhamento de portas, IPv6, CGNAT sem acesso de entrada (o diagnóstico
 deve explicar a inviabilidade). Use *Testar conexão externa* no app com o
 Wi-Fi desligado.
 
-### 3.4 Latência glass-to-glass
+### 4.4 Latência glass-to-glass
 
 1. Abra `tests/performance/clock.html` em tela cheia (relógio em ms).
 2. Aponte o celular para o relógio e coloque a fonte do OBS em projetor ao

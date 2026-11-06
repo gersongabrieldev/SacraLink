@@ -384,3 +384,35 @@ func (c *Client) GetSpecialInputs(ctx context.Context) (*SpecialInputs, error) {
 	s := &SpecialInputs{}
 	return s, c.Call(ctx, "GetSpecialInputs", nil, s)
 }
+
+// SceneCollections é a resposta de GetSceneCollectionList.
+type SceneCollections struct {
+	Current     string   `json:"currentSceneCollectionName"`
+	Collections []string `json:"sceneCollections"`
+}
+
+// GetSceneCollectionList lista as coleções de cenas.
+func (c *Client) GetSceneCollectionList(ctx context.Context) (*SceneCollections, error) {
+	s := &SceneCollections{}
+	return s, c.Call(ctx, "GetSceneCollectionList", nil, s)
+}
+
+// CreateSceneCollection cria uma coleção e muda o OBS para ela.
+func (c *Client) CreateSceneCollection(ctx context.Context, name string) error {
+	return c.Call(ctx, "CreateSceneCollection", map[string]any{"sceneCollectionName": name}, nil)
+}
+
+// SetCurrentSceneCollection muda a coleção de cenas atual.
+func (c *Client) SetCurrentSceneCollection(ctx context.Context, name string) error {
+	return c.Call(ctx, "SetCurrentSceneCollection", map[string]any{"sceneCollectionName": name}, nil)
+}
+
+// GetSourceScreenshot captura a imagem atual de uma fonte (data URI base64).
+// Prova que o OBS está de fato decodificando o vídeo da câmera.
+func (c *Client) GetSourceScreenshot(ctx context.Context, sourceName, format string, width int) (string, error) {
+	var r struct {
+		ImageData string `json:"imageData"`
+	}
+	err := c.Call(ctx, "GetSourceScreenshot", map[string]any{"sourceName": sourceName, "imageFormat": format, "imageWidth": width}, &r)
+	return r.ImageData, err
+}
