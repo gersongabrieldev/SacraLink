@@ -60,6 +60,7 @@ type System interface {
 	Logs() map[string][]string
 	Endpoints() devices.Endpoints
 	ApplySettings(ctx context.Context, s settings.Settings)
+	SelfTest(ctx context.Context) any
 }
 
 // Deps são as dependências das APIs.
@@ -152,6 +153,7 @@ func (s *Server) AdminHandler() http.Handler {
 
 	m.HandleFunc("GET /api/v1/system/status", a(s.systemStatus))
 	m.HandleFunc("GET /api/v1/system/logs", a(s.systemLogs))
+	m.HandleFunc("POST /api/v1/system/selftest", a(s.selfTest))
 	m.HandleFunc("POST /api/v1/system/media/restart", a(s.restartMedia))
 	m.HandleFunc("GET /api/v1/system/firewall", a(s.firewallStatus))
 	m.HandleFunc("POST /api/v1/system/firewall", a(s.applyFirewall))
@@ -1033,4 +1035,9 @@ func readBody(r *http.Request) ([]byte, error) {
 
 func jsonMessage(typ string, data any) ([]byte, error) {
 	return json.Marshal(events.Message{Type: typ, TS: time.Now().UnixMilli(), Data: data})
+}
+
+// selfTest executa o teste de funcionamento (somente leitura).
+func (s *Server) selfTest(w http.ResponseWriter, r *http.Request) {
+	writeJSON(w, http.StatusOK, s.d.System.SelfTest(r.Context()))
 }

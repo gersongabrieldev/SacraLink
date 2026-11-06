@@ -3,6 +3,7 @@ import { AlertTriangle } from 'lucide-react';
 import { useStore } from '../lib/store';
 import type { Settings, SystemStatus } from '../lib/types';
 import { Section, Toggle } from '../components/ui';
+import { SelfTest } from '../components/SelfTest';
 
 export function SettingsPage() {
   const { api, state, run, setToken } = useStore();
@@ -66,6 +67,7 @@ export function SettingsPage() {
             </dl>
             <Toggle checked={sys.autostart} onChange={(v) => run(async () => { await api.post('/api/v1/system/autostart', { enabled: v }); setSys({ ...sys, autostart: v }); }, v ? 'Início automático ativado' : 'Início automático desativado')}
               label="Iniciar o SacraLink com o Windows" hint="O servidor fica na bandeja e continua recebendo câmeras com o painel fechado." />
+            <SelfTest />
             <div className="flex flex-wrap gap-2">
               <button className="btn-ghost" onClick={() => run(() => api.post('/api/v1/system/media/restart'), 'Servidor de mídia reiniciando')}>Reiniciar servidor de mídia</button>
               <button className="btn-ghost" onClick={() => run(() => api.post('/api/v1/system/firewall', { confirm: true }), 'Regras de firewall atualizadas')}>Reconfigurar firewall</button>

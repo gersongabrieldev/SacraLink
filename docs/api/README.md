@@ -58,6 +58,7 @@ Proteções: escuta só em 127.0.0.1; `Host` obrigatório `127.0.0.1:7380`/
 | `GET /ws?ticket=…` | WebSocket de eventos: `snapshot`, `camera`, `obs`, `system`, `media`, `event`, `audio`, `settings`, `command`, `device_paired` |
 | `GET /system/status` · `GET /system/logs` | Estado, versões, Windows, métricas, logs do MediaMTX |
 | `POST /system/media/restart` | Reinicia o MediaMTX |
+| `POST /system/selftest` | Teste de funcionamento (banco, mídia, TLS dos celulares, OBS, firewall, rede, Windows) — somente leitura |
 | `GET /system/firewall` · `POST /system/firewall {confirm}` | Regras do firewall (eleva via UAC) |
 | `POST /system/autostart {enabled}` | Início com o Windows |
 | `GET /settings` · `PUT /settings` | Configurações |

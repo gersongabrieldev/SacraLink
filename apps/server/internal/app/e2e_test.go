@@ -169,6 +169,19 @@ func TestPontaAPonta(t *testing.T) {
 		return s.Media.State == "running"
 	})
 
+	// Teste de funcionamento do assistente: componentes essenciais "ok".
+	var checks []struct{ Name, Status, Message string }
+	admin.do("POST", "/api/v1/system/selftest", map[string]any{}, &checks)
+	status := map[string]string{}
+	for _, c := range checks {
+		status[c.Name] = c.Status
+	}
+	for _, name := range []string{"Banco de dados", "Servidor de mídia", "API dos celulares", "OBS Studio"} {
+		if status[name] != "ok" {
+			t.Fatalf("autoteste: %s = %q (%+v)", name, status[name], checks)
+		}
+	}
+
 	// 5) Publicação WHIP com vídeo H.264 e áudio Opus reais.
 	pub, err := testpub.Publish(ctx, creds, testpub.PublishOptions{IncludeLoopback: true})
 	if err != nil {

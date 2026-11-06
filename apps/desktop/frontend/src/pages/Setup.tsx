@@ -4,6 +4,7 @@ import { useStore } from '../lib/store';
 import { errorMessage } from '../lib/api';
 import type { NetworkReport, OBSStatus, Settings, SystemStatus } from '../lib/types';
 import { Toggle } from '../components/ui';
+import { SelfTest } from '../components/SelfTest';
 
 type Step = 'welcome' | 'password' | 'obs' | 'firewall' | 'network' | 'done';
 const steps: { id: Step; label: string }[] = [
@@ -277,6 +278,10 @@ function NetworkStep({ sys, onNext }: { sys: SystemStatus | null; onNext: () => 
           <li key={a.title} className="text-xs"><b>{a.title}:</b> <span className="text-muted">{a.message}</span></li>
         ))}
       </ul>
+      <div className="card bg-surface-2 p-3">
+        <div className="mb-2 text-sm font-semibold">Teste de funcionamento</div>
+        <SelfTest autoRun />
+      </div>
       <button className="btn-primary" onClick={onNext}>Concluir <ChevronRight size={16} /></button>
       <div className="flex items-center gap-2 text-xs text-muted"><Video size={14} /> O acesso por 4G/5G fica desligado até você habilitá-lo em Rede.</div>
     </div>
