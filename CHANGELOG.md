@@ -7,6 +7,14 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 ## [Não lançado]
 
 ### Adicionado
+- **Orientação controlada pelo painel**: cada câmera pode ser horizontal
+  (16:9) ou vertical (9:16). O celular recebe na hora (`hello_ack`/`config`):
+  o app trava a tela na orientação, a página do navegador pede para girar e
+  trava em tela cheia; o painel avisa "celular na posição errada".
+- **Tela de permissões na câmera pelo navegador**: lista câmera, microfone,
+  tela ligada e tela cheia/orientação, pede tudo num toque, explica como
+  liberar o que foi recusado e segue sem zoom remoto ou sem som quando só
+  isso foi negado.
 - **Câmera pelo navegador** (`https://<ip>:7443/cam/`): o celular vira câmera
   sem instalar aplicativo. O QR Code passa a ser um link `https://` com os
   dados no fragmento; a página (JavaScript puro, CSP estrita) usa o mesmo

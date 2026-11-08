@@ -249,3 +249,31 @@ func TestPresets(t *testing.T) {
 		t.Fatalf("lista: %d", len(list))
 	}
 }
+
+func TestOrientacaoDaCamera(t *testing.T) {
+	s := openTest(t)
+	ctx := context.Background()
+	_, c, err := pair(t, s, "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.Orientation != OrientationLandscape {
+		t.Fatalf("câmeras novas devem ser horizontais: %q", c.Orientation)
+	}
+	v := OrientationPortrait
+	if c, err = s.UpdateCamera(ctx, c.ID, CameraPatch{Orientation: &v}); err != nil || c.Orientation != OrientationPortrait {
+		t.Fatalf("vertical: %v %+v", err, c)
+	}
+	if c, _ = s.GetCamera(ctx, c.ID); c.Orientation != OrientationPortrait {
+		t.Fatalf("orientação não persistida: %q", c.Orientation)
+	}
+	bad := "diagonal"
+	if _, err := s.UpdateCamera(ctx, c.ID, CameraPatch{Orientation: &bad}); err == nil {
+		t.Fatal("orientação inválida aceita")
+	}
+	// Alterar outro campo preserva a orientação.
+	name := "Altar"
+	if c, _ = s.UpdateCamera(ctx, c.ID, CameraPatch{Name: &name}); c.Orientation != OrientationPortrait {
+		t.Fatalf("orientação perdida ao renomear: %q", c.Orientation)
+	}
+}

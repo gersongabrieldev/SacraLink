@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { initialState, messageToAction, reducer, sortedCameras } from './state';
-import { formatBitrate, formatDuration, gridColumns, signalBars } from './format';
+import { formatBitrate, formatDuration, gridColumns, orientationMismatch, signalBars } from './format';
 import type { CameraView } from './types';
 
 const cam = (id: string, slot: number, extra: Partial<CameraView> = {}): CameraView =>
@@ -50,5 +50,15 @@ describe('formatação', () => {
     expect(signalBars({ state: 'OFFLINE', bitrateKbps: 0, packetsLost: 0 })).toBe(0);
     expect(signalBars({ state: 'STREAMING', bitrateKbps: 2500, packetsLost: 0, jitterMs: 5, rttMs: 40 })).toBe(4);
     expect(signalBars({ state: 'STREAMING', bitrateKbps: 200, packetsLost: 10, jitterMs: 80, rttMs: 500 })).toBe(1);
+  });
+});
+
+describe('orientação', () => {
+  it('avisa quando o celular está na posição errada', () => {
+    expect(orientationMismatch({ orientation: 'landscape', width: 1280, height: 720 })).toBe(false);
+    expect(orientationMismatch({ orientation: 'landscape', width: 720, height: 1280 })).toBe(true);
+    expect(orientationMismatch({ orientation: 'portrait', width: 720, height: 1280 })).toBe(false);
+    expect(orientationMismatch({ orientation: 'portrait', width: 1280, height: 720 })).toBe(true);
+    expect(orientationMismatch({ orientation: 'portrait' })).toBe(false); // sem vídeo ainda
   });
 });

@@ -104,31 +104,16 @@ func TestCameraNoNavegador(t *testing.T) {
 	// O QR traz os IPs da rede local; no teste o servidor escuta só em 127.0.0.1.
 	link.Host = fmt.Sprintf("127.0.0.1:%d", cfg.DevicePort)
 
-	page := launchBrowser(t, ctx, browser, link.String())
+	// Câmera e microfone simulados com a permissão concedida (o operador
+	// toca em "Permitir").
+	page := launchBrowser(t, ctx, browser, link.String(), "--use-fake-ui-for-media-stream")
 	js := func(expr string, out any) {
 		t.Helper()
-		if err := page.eval(ctx, expr, out); err != nil {
-			t.Fatalf("%s: %v", expr, err)
-		}
+		page.must(t, ctx, expr, out)
 	}
 	waitJS := func(what string, timeout time.Duration, cond string) {
 		t.Helper()
-		deadline := time.Now().Add(timeout)
-		for {
-			var ok bool
-			if err := page.eval(ctx, cond, &ok); err == nil && ok {
-				return
-			}
-			if time.Now().After(deadline) {
-				var dump string
-				_ = page.eval(ctx, `JSON.stringify({screen: document.body.dataset.screen, tally: document.body.dataset.tally,
-					stream: document.body.dataset.stream, control: document.body.dataset.control,
-					chips: document.getElementById('chips').innerText, notices: document.getElementById('notices').innerText,
-					message: document.getElementById('message-text').innerText, pair: document.getElementById('pair-status').innerText})`, &dump)
-				t.Fatalf("tempo esgotado: %s\npágina: %s", what, dump)
-			}
-			time.Sleep(150 * time.Millisecond)
-		}
+		page.wait(t, ctx, what, timeout, cond)
 	}
 
 	// 1) O link abre a tela de pareamento e o token sai da barra de endereço.
@@ -141,7 +126,9 @@ func TestCameraNoNavegador(t *testing.T) {
 	}
 	js(`document.getElementById('pair-name').value = 'Navegador de teste'; document.getElementById('pair-btn').click(); true`, nil)
 
-	// 2) Câmera aberta e canal de controle conectado (ticket de uso único).
+	// 2) Permissões já concedidas (celular que já liberou o site): vai direto
+	// para a câmera. O caminho com a tela de permissões está no passo 10.
+	// Câmera aberta e canal de controle conectado (ticket de uso único).
 	waitJS("câmera aberta e controle conectado", 20*time.Second,
 		`document.body.dataset.screen === 'camera' && document.body.dataset.control === 'on'`)
 	var creds struct{ DeviceID, CameraID string }
@@ -201,6 +188,20 @@ func TestCameraNoNavegador(t *testing.T) {
 	obsSrv.SetProgram("Cena")
 	waitJS("página CONECTADA", 5*time.Second, `document.body.dataset.tally === 'connected'`)
 
+	// 5b) Orientação escolhida no painel: a página recebe na hora e, como a
+	// imagem está deitada, pede para girar o celular na vertical.
+	if st := admin.do("PATCH", camPath, map[string]any{"orientation": "portrait"}, nil); st != 200 {
+		t.Fatalf("orientação vertical: %d", st)
+	}
+	waitJS("página pede VERTICAL", 5*time.Second, `document.body.dataset.orientation === 'portrait' &&
+		!document.getElementById('rotate-hint').hidden && document.getElementById('rotate-text').textContent.includes('VERTICAL')`)
+	page.screenshot(t, ctx, "camera-navegador-girar")
+	if st := admin.do("PATCH", camPath, map[string]any{"orientation": "landscape"}, nil); st != 200 {
+		t.Fatalf("orientação horizontal: %d", st)
+	}
+	waitJS("página de volta à HORIZONTAL", 5*time.Second,
+		`document.body.dataset.orientation === 'landscape' && document.getElementById('rotate-hint').hidden`)
+
 	// 6) Comando remoto com confirmação do navegador.
 	var res struct {
 		Status, Message string
@@ -250,6 +251,38 @@ func TestCameraNoNavegador(t *testing.T) {
 	}
 	waitJS("página pede novo pareamento", 20*time.Second,
 		`document.body.dataset.screen === 'message' && localStorage.getItem('sacralink.cam.v1') === null`)
+
+	// 10) Celular novo: a página lista as permissões e pede num toque. O
+	// operador recusa → instruções para liberar; ele libera → "Tentar
+	// novamente" abre a câmera.
+	if st := admin.do("POST", "/api/v1/devices/pair", map[string]string{}, &pairing); st != 201 {
+		t.Fatalf("pairing 2: %d", st)
+	}
+	link2, _ := url.Parse(pairing.URI)
+	link2.Host = fmt.Sprintf("127.0.0.1:%d", cfg.DevicePort)
+	p2 := launchBrowser(t, ctx, browser, link2.String(), "--deny-permission-prompts")
+	p2.wait(t, ctx, "tela de pareamento (2)", 15*time.Second, `document.body.dataset.screen === 'pair'`)
+	p2.must(t, ctx, `document.getElementById('pair-btn').click(); true`, nil)
+	p2.wait(t, ctx, "tela de permissões", 10*time.Second, `document.body.dataset.screen === 'perms'`)
+	var perms []string
+	p2.must(t, ctx, `[...document.querySelectorAll('.perms li b')].map((b) => b.textContent)`, &perms)
+	if strings.Join(perms, "|") != "Câmera|Microfone|Tela sempre ligada|Tela cheia e orientação" {
+		t.Fatalf("permissões listadas: %v", perms)
+	}
+	p2.screenshot(t, ctx, "camera-navegador-permissoes")
+	p2.must(t, ctx, `document.getElementById('perms-btn').click(); true`, nil)
+	p2.wait(t, ctx, "instruções para liberar a câmera", 10*time.Second, `document.body.dataset.screen === 'perms' &&
+		!document.getElementById('perms-help').hidden && document.getElementById('perms-help').textContent.includes('Câmera') &&
+		document.getElementById('perms-btn').textContent === 'Tentar novamente'`)
+	p2.screenshot(t, ctx, "camera-navegador-permissao-negada")
+
+	origin := fmt.Sprintf("https://127.0.0.1:%d", cfg.DevicePort)
+	if _, err := p2.call(ctx, "Browser.grantPermissions", map[string]any{"origin": origin, "permissions": []string{"videoCapture", "audioCapture"}}); err != nil {
+		t.Fatalf("liberar permissões pelo DevTools: %v", err)
+	}
+	p2.must(t, ctx, `document.getElementById('perms-btn').click(); true`, nil)
+	p2.wait(t, ctx, "câmera aberta após liberar", 15*time.Second,
+		`document.body.dataset.screen === 'camera' && document.body.dataset.control === 'on'`)
 }
 
 // findBrowser procura Edge ou Chrome.
@@ -288,7 +321,10 @@ type cdpPage struct {
 	next int
 }
 
-func launchBrowser(t *testing.T, ctx context.Context, browser, startURL string) *cdpPage {
+// launchBrowser abre o navegador headless com câmera e microfone simulados.
+// extra decide a resposta aos pedidos de permissão: --use-fake-ui-for-media-stream
+// (concede) ou --deny-permission-prompts (nega).
+func launchBrowser(t *testing.T, ctx context.Context, browser, startURL string, extra ...string) *cdpPage {
 	t.Helper()
 	dir, err := os.MkdirTemp("", "sacralink-navegador-")
 	if err != nil {
@@ -296,7 +332,7 @@ func launchBrowser(t *testing.T, ctx context.Context, browser, startURL string) 
 	}
 	args := []string{
 		"--headless=new", "--no-first-run", "--no-default-browser-check", "--disable-extensions", "--disable-sync",
-		"--use-fake-device-for-media-stream", "--use-fake-ui-for-media-stream", // câmera/microfone simulados e permissão concedida
+		"--use-fake-device-for-media-stream",  // câmera e microfone simulados
 		"--ignore-certificate-errors",         // equivale a aceitar o aviso do certificado autoassinado no celular
 		"--allow-loopback-in-peer-connection", // ICE do MediaMTX em 127.0.0.1 no teste
 		"--autoplay-policy=no-user-gesture-required",
@@ -305,6 +341,7 @@ func launchBrowser(t *testing.T, ctx context.Context, browser, startURL string) 
 	if runtime.GOOS == "linux" {
 		args = append(args, "--no-sandbox", "--disable-dev-shm-usage") // contêiner do CI
 	}
+	args = append(args, extra...)
 	cmd := exec.Command(browser, append(args, startURL)...)
 	if err := cmd.Start(); err != nil {
 		t.Fatal(err)
@@ -418,6 +455,37 @@ func (p *cdpPage) eval(ctx context.Context, expr string, out any) error {
 	return nil
 }
 
+// must avalia uma expressão e falha o teste em caso de erro.
+func (p *cdpPage) must(t *testing.T, ctx context.Context, expr string, out any) {
+	t.Helper()
+	if err := p.eval(ctx, expr, out); err != nil {
+		t.Fatalf("%s: %v", expr, err)
+	}
+}
+
+// wait espera a condição JavaScript ficar verdadeira; ao esgotar o tempo,
+// mostra o estado da página para facilitar o diagnóstico.
+func (p *cdpPage) wait(t *testing.T, ctx context.Context, what string, timeout time.Duration, cond string) {
+	t.Helper()
+	deadline := time.Now().Add(timeout)
+	for {
+		var ok bool
+		if err := p.eval(ctx, cond, &ok); err == nil && ok {
+			return
+		}
+		if time.Now().After(deadline) {
+			var dump string
+			_ = p.eval(ctx, `JSON.stringify({screen: document.body.dataset.screen, tally: document.body.dataset.tally,
+				stream: document.body.dataset.stream, control: document.body.dataset.control, orientation: document.body.dataset.orientation,
+				chips: document.getElementById('chips').innerText, notices: document.getElementById('notices').innerText,
+				message: document.getElementById('message-text').innerText, pair: document.getElementById('pair-status').innerText,
+				perms: document.getElementById('perms-status').innerText, help: document.getElementById('perms-help').innerText})`, &dump)
+			t.Fatalf("tempo esgotado: %s\npágina: %s", what, dump)
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+}
+
 // screenshot salva a página em PNG quando SACRALINK_BROWSER_SHOTS aponta uma
 // pasta (conferência visual e imagens da documentação).
 func (p *cdpPage) screenshot(t *testing.T, ctx context.Context, name string) {
@@ -426,7 +494,18 @@ func (p *cdpPage) screenshot(t *testing.T, ctx context.Context, name string) {
 	if dir == "" {
 		return
 	}
-	raw, err := p.call(ctx, "Page.captureScreenshot", map[string]any{"format": "png"})
+	// Página inteira (inclui o que estaria abaixo da dobra).
+	params := map[string]any{"format": "png"}
+	if lm, err := p.call(ctx, "Page.getLayoutMetrics", nil); err == nil {
+		var m struct {
+			CSSContentSize struct{ Width, Height float64 } `json:"cssContentSize"`
+		}
+		if json.Unmarshal(lm, &m) == nil && m.CSSContentSize.Height > 0 {
+			params["captureBeyondViewport"] = true
+			params["clip"] = map[string]any{"x": 0, "y": 0, "width": m.CSSContentSize.Width, "height": m.CSSContentSize.Height, "scale": 1}
+		}
+	}
+	raw, err := p.call(ctx, "Page.captureScreenshot", params)
 	if err != nil {
 		t.Logf("captura %s: %v", name, err)
 		return

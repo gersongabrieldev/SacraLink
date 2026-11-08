@@ -87,6 +87,9 @@ type HelloAck struct {
 	WHIPPath     string         `json:"whipPath"`
 	Profile      map[string]any `json:"profile"`
 	HeartbeatSec int            `json:"heartbeatSec"`
+	// Orientation é a orientação da imagem escolhida no painel:
+	// landscape (horizontal) ou portrait (vertical). O celular segue.
+	Orientation string `json:"orientation"`
 }
 
 // Telemetry é enviada periodicamente pelo aparelho.

@@ -6,8 +6,8 @@ import {
 import { ApiError } from '../lib/api';
 import { useStore } from '../lib/store';
 import { t } from '../lib/i18n';
-import { formatBitrate, formatDuration, formatResolution, signalBars } from '../lib/format';
-import type { CameraView, CommandResult, MediaProfile, Preset } from '../lib/types';
+import { formatBitrate, formatDuration, formatResolution, orientationMismatch, signalBars } from '../lib/format';
+import type { CameraView, CommandResult, MediaProfile, Orientation, Preset } from '../lib/types';
 import { WhepVideo } from './WhepVideo';
 import { Confirm } from './ui';
 
@@ -83,6 +83,12 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
     setPresets((ps) => ps.filter((x) => x.id !== p.id));
   };
 
+  // Orientação: o painel decide; o celular recebe na hora e pede ao operador para girar.
+  const setOrientation = (orientation: Orientation) =>
+    run(() => api.patch(`/api/v1/cameras/${cam.id}`, { orientation }),
+      `${cam.name}: ${orientation === 'portrait' ? 'vertical' : 'horizontal'} — o celular vai pedir para girar`);
+  const wrongPosition = streaming && orientationMismatch(cam);
+
   const sendZoom = (v: number) => {
     setZoom(v);
     window.clearTimeout(zoomTimer.current);
@@ -112,8 +118,17 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
           {cam.preview && <span className="rounded bg-preview px-2 py-0.5 text-xs font-bold text-white">{t('tally.preview')}</span>}
           {!streaming && <span className="rounded bg-black/70 px-2 py-0.5 text-xs font-semibold text-white">{t(`state.${cam.state}`)}</span>}
         </div>
-        <div className="absolute top-2 right-2 rounded bg-black/70 px-2 py-0.5 text-xs font-bold text-white">{String(cam.slot).padStart(2, '0')}</div>
-        {cam.error && <div className="absolute inset-x-2 bottom-2 rounded bg-onair/90 px-2 py-1 text-xs text-white">{cam.error}</div>}
+        <div className="absolute top-2 right-2 flex gap-1.5">
+          {cam.orientation === 'portrait' && <span className="rounded bg-black/70 px-2 py-0.5 text-xs font-semibold text-white" title="Câmera vertical (9:16)">Vertical</span>}
+          <span className="rounded bg-black/70 px-2 py-0.5 text-xs font-bold text-white">{String(cam.slot).padStart(2, '0')}</span>
+        </div>
+        {cam.error ? (
+          <div className="absolute inset-x-2 bottom-2 rounded bg-onair/90 px-2 py-1 text-xs text-white">{cam.error}</div>
+        ) : wrongPosition && (
+          <div className="absolute inset-x-2 bottom-2 rounded bg-warn/90 px-2 py-1 text-xs font-semibold text-black">
+            Celular na posição errada: peça para girar na {cam.orientation === 'portrait' ? 'vertical' : 'horizontal'}
+          </div>
+        )}
       </div>
 
       <div className="flex flex-1 flex-col gap-2 p-3">
@@ -199,6 +214,13 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
                     </select>
                   </div>
                 )}
+                <div className="px-2 py-1">
+                  <div className="label">Orientação</div>
+                  <select className="input py-1" value={cam.orientation} onChange={(e) => setOrientation(e.target.value as Orientation)}>
+                    <option value="landscape">Horizontal (16:9)</option>
+                    <option value="portrait">Vertical (9:16)</option>
+                  </select>
+                </div>
                 <div className="px-2 py-1">
                   <div className="label">Qualidade</div>
                   <select className="input py-1" value={cam.profileId} onChange={(e) => command('quality.set', { profileId: e.target.value })}>

@@ -66,6 +66,11 @@ const S = {
   battery: null,
   network: 'unknown',
   error: '',
+  orientation: 'landscape', // escolhida no painel do computador: landscape | portrait
+  micDenied: false, // o navegador bloqueou o microfone
+  noMic: false, // o operador escolheu continuar sem microfone
+  started: false,
+  noPtz: false, // o controle de zoom ("mover a câmera") foi recusado
 };
 
 // ---------------------------------------------------------------------------
@@ -131,7 +136,7 @@ function credentialRejected(err) {
   publisher.stop();
   stopCapture();
   S.creds = null; // nada mais reabre câmera ou reconecta com a credencial revogada
-  showMessage('Este celular foi desconectado do SacraLink. No computador, gere um novo QR Code (Câmeras → Adicionar câmera) e leia-o com a câmera do celular.');
+  showMessage('Este celular foi desconectado do SacraLink. No computador, gere um novo QR Code (Câmeras e aparelhos → Parear celular) e leia-o com a câmera do celular.');
   return true;
 }
 
@@ -206,23 +211,60 @@ function describeMediaError(e) {
 
 // Abre (ou reabre) a câmera. Muitos celulares não abrem duas câmeras ao mesmo
 // tempo: a faixa anterior é parada antes de abrir a nova.
+const gum = (video, withAudio) => navigator.mediaDevices.getUserMedia({ video, audio: withAudio ? AUDIO : false });
+
+// Algo foi recusado no pedido de permissão. Descobre o quê e segue com o que
+// foi liberado: sem o controle de zoom (o Chrome chama de "mover a câmera")
+// e/ou sem microfone. Só a câmera recusada impede de continuar. No máximo
+// mais dois pedidos, para não cansar o operador.
+async function retryAfterDenial(err, video, needAudio) {
+  const [cam, mic] = await Promise.all([permissionState('camera'), permissionState('microphone')]);
+  if (cam === 'denied') throw err;
+  const noZoom = { ...video };
+  delete noZoom.zoom;
+  const tries = [];
+  if (cam === 'granted') {
+    if (!needAudio || mic === 'granted') {
+      tries.push([noZoom, needAudio]); // câmera e microfone liberados: foi o zoom
+    } else {
+      tries.push([video, false], [noZoom, false]); // microfone bloqueado
+    }
+  } else {
+    tries.push([noZoom, false]); // navegador não informa: tenta só a câmera
+  }
+  for (const [v, withAudio] of tries) {
+    try {
+      const st = await gum(v, withAudio);
+      if (!v.zoom && video.zoom) S.noPtz = true;
+      if (needAudio && !withAudio) S.micDenied = true;
+      return st;
+    } catch { /* tenta a próxima combinação */ }
+  }
+  throw err;
+}
+
 async function openCapture() {
-  const video = { ...videoConstraints(), zoom: true };
+  const video = { ...videoConstraints() };
+  if (!S.noPtz) video.zoom = true; // pede também o controle do zoom pelo operador
   const lens = lensById(S.lensId);
   if (lens) video.deviceId = { exact: lens.deviceId };
   else video.facingMode = { ideal: 'environment' };
 
   if (S.video) S.video.stop();
-  const needAudio = !S.audio || S.audio.readyState === 'ended';
+  const needAudio = !S.noMic && (!S.audio || S.audio.readyState === 'ended');
+  if (needAudio) S.micDenied = false;
   let st;
   try {
-    st = await navigator.mediaDevices.getUserMedia({ video, audio: needAudio ? AUDIO : false });
+    st = await gum(video, needAudio);
   } catch (e) {
     if (needAudio && e.name === 'NotFoundError') {
-      st = await navigator.mediaDevices.getUserMedia({ video, audio: false }); // aparelho sem microfone
+      st = await gum(video, false); // aparelho sem microfone
+    } else if (e.name === 'NotAllowedError' || e.name === 'SecurityError') {
+      st = await retryAfterDenial(e, video, needAudio);
     } else if (lens && e.name === 'OverconstrainedError') {
       delete video.deviceId;
-      st = await navigator.mediaDevices.getUserMedia({ video, audio: needAudio ? AUDIO : false });
+      video.facingMode = { ideal: lens.facing === 'front' ? 'user' : 'environment' };
+      st = await gum(video, needAudio);
     } else {
       throw e;
     }
@@ -915,6 +957,7 @@ function onControl(type, data) {
       S.sessionId = data.sessionId || '';
       if (data.cameraName) S.creds.cameraName = data.cameraName;
       if (data.serverName) S.creds.serverName = data.serverName;
+      setOrientation(data.orientation, false);
       save(localStorage, STORE_KEY, S.creds);
       if (data.profile && typeof data.profile === 'object') {
         const p = profileFromJson(data.profile);
@@ -931,10 +974,9 @@ function onControl(type, data) {
       break;
     }
     case 'config':
-      if (data.cameraName) {
-        S.creds.cameraName = data.cameraName;
-        save(localStorage, STORE_KEY, S.creds);
-      }
+      if (data.cameraName) S.creds.cameraName = data.cameraName;
+      setOrientation(data.orientation, true);
+      save(localStorage, STORE_KEY, S.creds);
       if (data.profile && typeof data.profile === 'object') setProfile(profileFromJson(data.profile), false).catch(() => {});
       break;
     case 'command':
@@ -942,6 +984,53 @@ function onControl(type, data) {
       break;
   }
   render();
+}
+
+// ---------------------------------------------------------------------------
+// Orientação (horizontal ou vertical): quem decide é o painel do computador.
+// A imagem do celular acompanha a posição do aparelho; a página pede para
+// girar quando ela não bate com a escolha e trava a tela em tela cheia.
+
+function setOrientation(o, announce) {
+  if (o !== 'landscape' && o !== 'portrait') return;
+  const changed = S.orientation !== o;
+  S.orientation = o;
+  if (S.creds) S.creds.orientation = o;
+  // Celular na posição errada: o aviso grande no centro já orienta. Na posição
+  // certa, só informa a mudança.
+  if (changed && announce && !(S.video && currentOrientation() !== o)) {
+    notice(o === 'portrait' ? 'Câmera agora na VERTICAL (escolhido no computador)' : 'Câmera agora na HORIZONTAL (escolhido no computador)', 'info', 4000);
+  }
+  lockOrientation();
+  render();
+}
+
+// Orientação da imagem que está saindo (a do vídeo; senão, a da tela).
+function currentOrientation() {
+  const v = $('preview');
+  if (v.videoWidth && v.videoHeight && v.videoWidth !== v.videoHeight) return v.videoHeight > v.videoWidth ? 'portrait' : 'landscape';
+  const type = screen.orientation && screen.orientation.type;
+  if (type) return type.startsWith('portrait') ? 'portrait' : 'landscape';
+  return matchMedia('(orientation: portrait)').matches ? 'portrait' : 'landscape';
+}
+
+async function lockOrientation() {
+  if (!document.fullscreenElement || !screen.orientation || typeof screen.orientation.lock !== 'function') return;
+  try {
+    await screen.orientation.lock(S.orientation);
+  } catch { /* navegador sem trava de orientação: o aviso na tela orienta */ }
+}
+
+// Tela cheia + trava na orientação escolhida (precisa de um toque do operador).
+async function enterFullscreen() {
+  if (document.fullscreenEnabled && !document.fullscreenElement) {
+    try {
+      await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    } catch {
+      return;
+    }
+  }
+  await lockOrientation();
 }
 
 // Parâmetros afetados por comando (política de conflito).
@@ -1180,6 +1269,7 @@ function render() {
   const b = document.body;
   b.dataset.tally = S.tally;
   b.dataset.stream = S.streamState;
+  b.dataset.orientation = S.orientation;
   if (!S.creds) return;
 
   $('tally').textContent = TALLY_TEXT[S.tally] || (S.controlConnected ? 'OBS SEM CONEXÃO' : 'SEM CONEXÃO COM O PC');
@@ -1203,6 +1293,8 @@ function render() {
     chips.push(chip(`Bateria ${pct}%${S.battery.charging ? ' ⚡' : ''}`, pct < 20 && !S.battery.charging ? 'bad' : ''));
   }
   if (S.micMuted) chips.push(chip('Microfone mudo', 'warn'));
+  if (S.micDenied || S.noMic) chips.push(chip('Sem microfone (bloqueado no navegador)', 'warn'));
+  if (S.orientation === 'portrait') chips.push(chip('Vertical'));
   if (S.network === 'cellular') chips.push(chip('4G/5G'));
   if (S.error) chips.push(chip(S.error, 'bad'));
   $('chips').replaceChildren(...chips);
@@ -1230,6 +1322,13 @@ function render() {
   mic.classList.toggle('off', S.micMuted);
   mic.setAttribute('aria-pressed', String(S.micMuted));
   $('flip').hidden = !flipTarget();
+
+  const wrong = !!S.video && currentOrientation() !== S.orientation;
+  b.dataset.wrongOrientation = String(wrong);
+  $('rotate-hint').hidden = !wrong;
+  $('rotate-text').textContent = S.orientation === 'portrait'
+    ? 'Gire o celular na VERTICAL (em pé)'
+    : 'Gire o celular na HORIZONTAL (deitado)';
 
   const cur = lensById(S.lensId);
   const same = S.lenses.filter((l) => cur && l.facing === cur.facing);
@@ -1275,9 +1374,18 @@ function bindUi() {
       if (S.tally === 'on_air' && !confirm('Esta câmera está NO AR. Parar a transmissão mesmo assim?')) return;
       stopStream();
     } else {
+      enterFullscreen(); // aproveita o toque: tela cheia e trava na orientação escolhida
       startStream();
     }
   });
+  $('perms-btn').addEventListener('click', () => requestPermissions());
+  $('perms-nomic').addEventListener('click', () => {
+    S.noMic = true;
+    enterCamera();
+  });
+  $('preview').addEventListener('resize', render); // o celular girou: a imagem mudou de formato
+  window.addEventListener('resize', render);
+  if (screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', render);
   $('flip').addEventListener('click', () => flipCamera(true).catch((e) => notice(describeMediaError(e), 'error')));
   $('torch').addEventListener('click', () => setTorch(!S.torch, true).catch(() => notice('Lanterna indisponível.', 'warn')));
   $('mic').addEventListener('click', () => {
@@ -1300,17 +1408,18 @@ function bindUi() {
   fs.hidden = !document.fullscreenEnabled;
   fs.addEventListener('click', async () => {
     try {
-      if (document.fullscreenElement) {
-        await document.exitFullscreen();
-      } else {
-        await document.documentElement.requestFullscreen();
-        if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape').catch(() => {});
-      }
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await enterFullscreen();
     } catch { /* tela cheia indisponível */ }
   });
 
   document.addEventListener('visibilitychange', () => {
     if (document.visibilityState !== 'visible' || !S.creds) return;
+    if (document.body.dataset.screen === 'perms') {
+      showPermissions(); // voltou das configurações: atualiza o que já foi liberado
+      return;
+    }
+    if (!S.started) return;
     requestWakeLock();
     if (!S.video || S.video.readyState === 'ended' || S.video.muted) reopenSoon();
     if (!S.controlConnected) control.restart();
@@ -1328,18 +1437,134 @@ function bindUi() {
 }
 
 // ---------------------------------------------------------------------------
-// Início
+// Permissões: a página lista tudo o que o celular precisa e pede de uma vez,
+// num toque do operador (exigido por alguns navegadores, como o Safari).
 
-async function startCamera() {
-  document.body.dataset.screen = 'camera';
-  $('rotate-hint').hidden = false;
-  render();
+async function permissionState(name) {
   try {
-    await openCapture();
+    if (!navigator.permissions || !navigator.permissions.query) return 'unknown';
+    return (await navigator.permissions.query({ name })).state; // granted | denied | prompt
+  } catch {
+    return 'unknown'; // navegador não informa (ex.: Safari antigo)
+  }
+}
+
+function setPermState(id, text, cls = '') {
+  const el = $(id).querySelector('.state');
+  el.textContent = text;
+  el.className = `state ${cls}`;
+}
+
+async function refreshPermissions() {
+  const [cam, mic] = await Promise.all([permissionState('camera'), permissionState('microphone')]);
+  const label = (st, f) => (st === 'granted' ? [`Permitid${f}`, 'ok'] : st === 'denied' ? [`Bloquead${f}`, 'bad'] : [`Será pedid${f}`, '']);
+  setPermState('perm-camera', ...label(S.video ? 'granted' : cam, 'a'));
+  setPermState('perm-mic', ...(S.micDenied ? ['Bloqueado', 'bad'] : S.audio ? ['Permitido', 'ok'] : label(mic, 'o')));
+  const wake = 'wakeLock' in navigator;
+  setPermState('perm-wake', wake ? 'Automática' : 'Ajuste manual', wake ? 'ok' : 'warn');
+  const canLock = document.fullscreenEnabled && screen.orientation && typeof screen.orientation.lock === 'function';
+  setPermState('perm-screen', canLock ? 'Ao transmitir' : 'Gire à mão', canLock ? '' : 'warn');
+  return { cam, mic, wake };
+}
+
+// Instruções para liberar uma permissão bloqueada (texto fixo, sem dados externos).
+function permissionHelp(what) {
+  const p = platformInfo().platform;
+  if (p === 'ios') {
+    return [
+      `No Safari, toque em <b>aA</b> na barra de endereço → <b>Configurações do Site</b> → <b>${what}</b> → <b>Permitir</b>.`,
+      `Se não aparecer: <b>Ajustes</b> do iPhone → <b>Apps → Safari</b> → <b>${what}</b> → <b>Permitir</b>.`,
+      'Volte aqui e toque em <b>Tentar novamente</b>.',
+    ];
+  }
+  if (p === 'android') {
+    return [
+      `Toque no ícone ao lado do endereço (cadeado ou ⓘ) → <b>Permissões</b> → <b>${what}</b> → <b>Permitir</b>.`,
+      `Se continuar bloqueado: <b>Configurações</b> do Android → <b>Apps → Chrome → Permissões</b> → <b>${what}</b> → <b>Permitir</b>.`,
+      'Volte aqui e toque em <b>Tentar novamente</b>.',
+    ];
+  }
+  return [`Nas configurações deste site no navegador, permita <b>${what}</b>.`, 'Depois toque em <b>Tentar novamente</b>.'];
+}
+
+async function showPermissions(err) {
+  document.body.dataset.screen = 'perms';
+  const { cam, mic, wake } = await refreshPermissions();
+  const camBlocked = !S.video && (cam === 'denied' || (err && (err.name === 'NotAllowedError' || err.name === 'SecurityError')));
+  const micBlocked = !S.noMic && (S.micDenied || (!S.audio && mic === 'denied'));
+  const status = $('perms-status');
+  status.textContent = camBlocked
+    ? 'O navegador recusou o acesso à câmera. Veja abaixo como liberar.'
+    : err ? describeMediaError(err) : micBlocked && S.video ? 'O microfone foi bloqueado. Libere-o ou continue sem som.' : '';
+  const help = $('perms-help');
+  const what = camBlocked && micBlocked ? 'Câmera e Microfone' : camBlocked ? 'Câmera' : micBlocked ? 'Microfone' : '';
+  if (what) {
+    help.innerHTML = `<b>Como liberar ${what === 'Microfone' ? 'o microfone' : what === 'Câmera' ? 'a câmera' : 'câmera e microfone'}:</b><ol>${
+      permissionHelp(what).map((s) => `<li>${s}</li>`).join('')}</ol>`;
+    help.hidden = false;
+  } else if (!wake) {
+    help.innerHTML = '<b>Tela ligada:</b> este navegador não mantém a tela acesa sozinho. Desative o bloqueio automático da tela durante a transmissão.';
+    help.hidden = false;
+  } else {
+    help.hidden = true;
+  }
+  $('perms-btn').textContent = what ? 'Tentar novamente' : 'Permitir acesso';
+  $('perms-nomic').hidden = !(micBlocked && !camBlocked && S.video);
+}
+
+async function requestPermissions() {
+  const btn = $('perms-btn');
+  btn.disabled = true;
+  $('perms-status').textContent = 'Toque em "Permitir" no aviso do navegador…';
+  S.noMic = false;
+  try {
+    await openCapture(); // câmera + microfone (+ zoom) num único pedido
   } catch (e) {
-    showMessage(describeMediaError(e));
+    btn.disabled = false;
+    await showPermissions(e);
     return;
   }
+  btn.disabled = false;
+  requestWakeLock(); // aproveita o toque do operador
+  if (S.micDenied) {
+    await showPermissions(); // câmera liberada, microfone bloqueado: explica e oferece seguir sem som
+    return;
+  }
+  $('perms-status').textContent = '';
+  await enterCamera();
+}
+
+// Depois do pareamento (ou ao reabrir a página): se tudo já está liberado, vai
+// direto para a câmera; senão, mostra a tela de permissões.
+async function startCamera() {
+  if (S.creds && S.creds.orientation) S.orientation = S.creds.orientation;
+  const { cam, mic } = await refreshPermissions();
+  if (cam === 'granted' && mic === 'granted') {
+    await enterCamera();
+    return;
+  }
+  await showPermissions();
+}
+
+async function enterCamera() {
+  document.body.dataset.screen = 'camera';
+  render();
+  if (!S.video) {
+    try {
+      await openCapture();
+    } catch (e) {
+      await showPermissions(e);
+      return;
+    }
+  }
+  if (S.micDenied && !S.noMic) {
+    await showPermissions();
+    return;
+  }
+  if (S.started) return;
+  S.started = true;
+  if (S.noMic) notice('Transmitindo sem som: o microfone está bloqueado no navegador.', 'warn', 6000);
+  if (S.noPtz) notice('Zoom remoto indisponível: a permissão para "mover a câmera" foi recusada.', 'warn', 6000);
   S.network = networkType();
   if (navigator.getBattery) {
     navigator.getBattery().then((bat) => {
@@ -1376,7 +1601,7 @@ function showPairing(info) {
       await startCamera();
     } catch (e) {
       status.textContent = e.code === 'pairing_invalid'
-        ? 'QR Code inválido, expirado ou já usado. Gere um novo no painel (Câmeras → Adicionar câmera).'
+        ? 'QR Code inválido, expirado ou já usado. Gere um novo no painel (Câmeras e aparelhos → Parear celular).'
         : e.message || String(e);
       btn.disabled = false;
     }
@@ -1408,7 +1633,7 @@ async function main() {
     return;
   }
   S.creds = null;
-  showMessage('Este celular ainda não está conectado. No computador, abra o SacraLink → Câmeras → Adicionar câmera e leia o QR Code com a câmera do celular.');
+  showMessage('Este celular ainda não está conectado. No computador, abra o SacraLink → Câmeras e aparelhos → Parear celular e leia o QR Code com a câmera do celular.');
 }
 
 main();

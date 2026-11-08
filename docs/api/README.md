@@ -69,7 +69,7 @@ Proteções: escuta só em 127.0.0.1; `Host` obrigatório `127.0.0.1:7380`/
 | `POST /devices/{id}/revoke\|block\|unblock\|disconnect` | Autorização |
 | `DELETE /devices/{id}?confirm=true` | Remover (a câmera permanece) |
 | `GET /profiles` | Perfis de qualidade |
-| `GET /cameras` · `GET /cameras/{id}` · `PATCH /cameras/{id}` | Câmeras (`name`, `operatorName`, `profileId`, `ingestMode`, `isBackup`, `audioSyncOffsetMs`) |
+| `GET /cameras` · `GET /cameras/{id}` · `PATCH /cameras/{id}` | Câmeras (`name`, `operatorName`, `profileId`, `ingestMode`, `isBackup`, `audioSyncOffsetMs`, `orientation`: `landscape` ou `portrait` — enviada na hora ao celular) |
 | `POST /cameras/{id}/commands {name, params, force}` | Comando remoto → resultado confirmado |
 | `POST /cameras/{id}/zoom\|lens\|quality` | Atalhos da especificação |
 | `GET /cameras/{id}/metrics?since=` | Métricas (amostras de 10 s) |

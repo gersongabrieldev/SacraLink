@@ -41,6 +41,8 @@ export interface CommandView {
   at: number;
 }
 
+export type Orientation = 'landscape' | 'portrait';
+
 export interface CameraView {
   id: string;
   slot: number;
@@ -50,6 +52,8 @@ export interface CameraView {
   ingestMode: 'rtsp' | 'whep';
   isBackup: boolean;
   audioSyncOffsetMs: number;
+  /** Escolhida no painel; o celular segue (horizontal 16:9 ou vertical 9:16). */
+  orientation: Orientation;
   mediaPath: string;
   device?: { id: string; name: string; platform: string; model: string; appVersion: string; status: string };
   state: ConnState;

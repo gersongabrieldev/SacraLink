@@ -78,6 +78,7 @@ type CameraView struct {
 	IngestMode        string `json:"ingestMode"`
 	IsBackup          bool   `json:"isBackup"`
 	AudioSyncOffsetMs int    `json:"audioSyncOffsetMs"`
+	Orientation       string `json:"orientation"` // landscape | portrait (escolhida no painel)
 	MediaPath         string `json:"mediaPath"`
 
 	Device *DeviceView `json:"device,omitempty"`
@@ -173,7 +174,7 @@ func (c *camState) view(src obsbridge.SourceStatus) CameraView {
 	v := CameraView{
 		ID: c.cam.ID, Slot: c.cam.Slot, Name: c.cam.Name, OperatorName: c.cam.OperatorName,
 		ProfileID: c.cam.ProfileID, IngestMode: c.cam.IngestMode, IsBackup: c.cam.IsBackup,
-		AudioSyncOffsetMs: c.cam.AudioSyncOffsetMs, MediaPath: c.cam.MediaPath(),
+		AudioSyncOffsetMs: c.cam.AudioSyncOffsetMs, Orientation: c.cam.Orientation, MediaPath: c.cam.MediaPath(),
 		State: c.state, Tally: c.tally.Label(), Program: c.tally.Program, Preview: c.tally.Preview,
 		ControlConnected: c.controlConnected, RemoteAddr: c.remoteAddr, Error: c.errorReason,
 		BitrateKbps: c.bitrateKbps, Width: c.width, Height: c.height, VideoCodec: c.codec, HasAudio: c.hasAudio,

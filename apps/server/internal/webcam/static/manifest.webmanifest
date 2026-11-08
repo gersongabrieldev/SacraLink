@@ -5,7 +5,7 @@
   "start_url": "/cam/",
   "scope": "/cam/",
   "display": "fullscreen",
-  "orientation": "landscape",
+  "orientation": "any",
   "background_color": "#0b0e14",
   "theme_color": "#0b0e14",
   "lang": "pt-BR",

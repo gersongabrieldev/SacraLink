@@ -13,6 +13,12 @@ const (
 	IngestWHEP = "whep"
 )
 
+// Orientação da imagem, escolhida no painel (o celular segue).
+const (
+	OrientationLandscape = "landscape" // horizontal, 16:9
+	OrientationPortrait  = "portrait"  // vertical, 9:16
+)
+
 // Camera é a identidade persistente de uma câmera do SacraLink. Ela sobrevive
 // a reconexões e à troca do aparelho.
 type Camera struct {
@@ -25,6 +31,7 @@ type Camera struct {
 	IngestMode        string `json:"ingestMode"`
 	IsBackup          bool   `json:"isBackup"`
 	AudioSyncOffsetMs int    `json:"audioSyncOffsetMs"`
+	Orientation       string `json:"orientation"` // landscape | portrait
 	CreatedAt         int64  `json:"createdAt"`
 	UpdatedAt         int64  `json:"updatedAt"`
 }
@@ -33,13 +40,13 @@ type Camera struct {
 func (c *Camera) MediaPath() string { return "sl/" + c.ID }
 
 const cameraCols = `id, slot, name, operator_name, COALESCE(device_id, ''), profile_id, ingest_mode, is_backup,
-	audio_sync_offset_ms, created_at, updated_at`
+	audio_sync_offset_ms, orientation, created_at, updated_at`
 
 func scanCamera(sc interface{ Scan(...any) error }) (*Camera, error) {
 	c := &Camera{}
 	var backup int
 	if err := sc.Scan(&c.ID, &c.Slot, &c.Name, &c.OperatorName, &c.DeviceID, &c.ProfileID, &c.IngestMode,
-		&backup, &c.AudioSyncOffsetMs, &c.CreatedAt, &c.UpdatedAt); err != nil {
+		&backup, &c.AudioSyncOffsetMs, &c.Orientation, &c.CreatedAt, &c.UpdatedAt); err != nil {
 		return nil, err
 	}
 	c.IsBackup = backup == 1
@@ -90,6 +97,7 @@ type CameraPatch struct {
 	IngestMode        *string `json:"ingestMode,omitempty"`
 	IsBackup          *bool   `json:"isBackup,omitempty"`
 	AudioSyncOffsetMs *int    `json:"audioSyncOffsetMs,omitempty"`
+	Orientation       *string `json:"orientation,omitempty"`
 }
 
 // UpdateCamera aplica um patch na câmera.
@@ -119,10 +127,16 @@ func (s *Store) UpdateCamera(ctx context.Context, id string, p CameraPatch) (*Ca
 	if p.AudioSyncOffsetMs != nil {
 		c.AudioSyncOffsetMs = *p.AudioSyncOffsetMs
 	}
+	if p.Orientation != nil {
+		if *p.Orientation != OrientationLandscape && *p.Orientation != OrientationPortrait {
+			return nil, fmt.Errorf("orientação inválida: %q (use landscape ou portrait)", *p.Orientation)
+		}
+		c.Orientation = *p.Orientation
+	}
 	c.UpdatedAt = s.nowMs()
 	_, err = s.db.ExecContext(ctx, `UPDATE cameras SET name = ?, operator_name = ?, profile_id = ?, ingest_mode = ?,
-		is_backup = ?, audio_sync_offset_ms = ?, updated_at = ? WHERE id = ?`,
-		c.Name, c.OperatorName, c.ProfileID, c.IngestMode, boolToInt(c.IsBackup), c.AudioSyncOffsetMs, c.UpdatedAt, id)
+		is_backup = ?, audio_sync_offset_ms = ?, orientation = ?, updated_at = ? WHERE id = ?`,
+		c.Name, c.OperatorName, c.ProfileID, c.IngestMode, boolToInt(c.IsBackup), c.AudioSyncOffsetMs, c.Orientation, c.UpdatedAt, id)
 	if err != nil {
 		return nil, err
 	}

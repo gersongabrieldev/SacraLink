@@ -54,6 +54,7 @@ func (c *Core) OnHello(p control.Peer, sessionID string, h control.Hello) (contr
 	ack := control.HelloAck{
 		DeviceID: p.DeviceID, CameraID: cam.ID, CameraName: cam.Name, Slot: cam.Slot,
 		ServerName: c.opt.Settings.Get().ServerName, WHIPPath: "/device/v1/whip",
+		Orientation: cam.Orientation,
 	}
 	if prof != nil {
 		ack.Profile = profileMap(prof)
@@ -214,7 +215,7 @@ func (c *Core) UpdateCamera(ctx context.Context, actor, id string, p store.Camer
 		}
 	}
 	if c.ctrl != nil {
-		cfg := map[string]any{"cameraName": cam.Name}
+		cfg := map[string]any{"cameraName": cam.Name, "orientation": cam.Orientation}
 		if prof, err := c.opt.Store.GetProfile(ctx, cam.ProfileID); err == nil {
 			cfg["profile"] = profileMap(prof)
 		}

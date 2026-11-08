@@ -165,6 +165,27 @@ func TestPontaAPonta(t *testing.T) {
 	}
 	defer ctl.Close()
 	waitFor(t, "hello_ack", 5*time.Second, func() bool { return ctl.HelloAck().CameraID == creds.CameraID })
+	if o := ctl.HelloAck().Orientation; o != "landscape" {
+		t.Fatalf("câmera nova deveria ser horizontal no hello_ack: %q", o)
+	}
+
+	// 4b) Orientação: o painel decide e o celular recebe na hora.
+	var camOut struct{ Orientation string }
+	if st := admin.do("PATCH", "/api/v1/cameras/"+creds.CameraID, map[string]any{"orientation": "portrait"}, &camOut); st != 200 || camOut.Orientation != "portrait" {
+		t.Fatalf("orientação vertical: %d %+v", st, camOut)
+	}
+	waitFor(t, "celular recebe VERTICAL", 5*time.Second, func() bool {
+		cfg, ok := ctl.LastConfig()
+		return ok && cfg["orientation"] == "portrait"
+	})
+	if st := admin.do("PATCH", "/api/v1/cameras/"+creds.CameraID, map[string]any{"orientation": "diagonal"}, nil); st != 400 {
+		t.Fatalf("orientação inválida deveria ser recusada: %d", st)
+	}
+	admin.do("PATCH", "/api/v1/cameras/"+creds.CameraID, map[string]any{"orientation": "landscape"}, nil)
+	waitFor(t, "celular recebe HORIZONTAL", 5*time.Second, func() bool {
+		cfg, ok := ctl.LastConfig()
+		return ok && cfg["orientation"] == "landscape"
+	})
 
 	waitFor(t, "servidor de mídia em execução", 20*time.Second, func() bool {
 		var s struct{ Media struct{ State string } }

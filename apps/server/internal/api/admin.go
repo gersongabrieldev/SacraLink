@@ -603,6 +603,10 @@ func (s *Server) patchCamera(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
+	if p.Orientation != nil && *p.Orientation != store.OrientationLandscape && *p.Orientation != store.OrientationPortrait {
+		writeError(w, badRequest("orientação inválida: use landscape (horizontal) ou portrait (vertical)"))
+		return
+	}
 	cam, err := s.d.Core.UpdateCamera(r.Context(), userFrom(r.Context()), r.PathValue("id"), p)
 	if err != nil {
 		writeError(w, err)

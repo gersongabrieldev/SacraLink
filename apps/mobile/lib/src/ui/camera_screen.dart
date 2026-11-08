@@ -31,10 +31,23 @@ class _CameraScreenState extends State<CameraScreen> {
     QualityProfile(id: 'alta60', width: 1920, height: 1080, fps: 60, maxBitrateKbps: 6500, minBitrateKbps: 1200),
   ];
 
+  String? _appliedOrientation;
+
+  /// Trava a tela na orientação escolhida no painel. A imagem da câmera
+  /// acompanha a orientação da tela, então o celular passa a transmitir
+  /// horizontal (16:9) ou vertical (9:16) conforme o operador central.
+  void _applyOrientation() {
+    if (_appliedOrientation == s.orientation) return;
+    _appliedOrientation = s.orientation;
+    SystemChrome.setPreferredOrientations(s.orientation == 'portrait'
+        ? [DeviceOrientation.portraitUp]
+        : [DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+  }
+
   @override
   void initState() {
     super.initState();
-    SystemChrome.setPreferredOrientations([DeviceOrientation.landscapeLeft, DeviceOrientation.landscapeRight]);
+    _applyOrientation();
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     s.addListener(_refresh);
     s.open().catchError((Object e) {
@@ -44,7 +57,9 @@ class _CameraScreenState extends State<CameraScreen> {
   }
 
   void _refresh() {
-    if (mounted) setState(() {});
+    if (!mounted) return;
+    _applyOrientation();
+    setState(() {});
   }
 
   @override

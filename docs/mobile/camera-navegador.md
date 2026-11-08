@@ -17,8 +17,47 @@ loja de aplicativos, conta da Apple ou APK para instalar. O app nativo
    - **Android (Chrome):** *Avançado* → *Continuar para 192.168.… (não seguro)*.
    - **iPhone (Safari):** *Mostrar Detalhes* → *visitar este site* → *Visitar Site*.
 4. Digite um nome (ex.: "Pedro — altar") e toque em **Conectar**.
-5. Permita **câmera e microfone**.
-6. Gire o celular na horizontal e toque em **Iniciar transmissão**.
+5. A tela **Permissões do celular** lista tudo o que será pedido. Toque em
+   **Permitir acesso** e responda **Permitir** nos avisos do navegador
+   (detalhes abaixo).
+6. Deixe o celular na posição escolhida no computador (horizontal ou
+   vertical) e toque em **Iniciar transmissão**.
+
+## Permissões pedidas
+
+| Permissão | Para quê | Se for recusada |
+|---|---|---|
+| **Câmera** | A imagem enviada ao OBS | Não dá para transmitir: a página mostra como liberar |
+| **Microfone** | O som do celular | A página explica como liberar ou permite **continuar sem som** |
+| **Mover a câmera** (Chrome) | Zoom controlado pelo operador central | A câmera funciona, só sem zoom remoto |
+| **Tela sempre ligada** | Com a tela apagada o celular pausa a câmera | Automática (sem aviso); em navegadores antigos, desative o bloqueio automático da tela |
+| **Tela cheia e orientação** | Trava a tela na posição escolhida no computador | Pedida ao tocar em *Iniciar transmissão*; no iPhone, gire à mão |
+
+A página pede tudo de uma vez, num único toque, e segue com o que foi
+liberado. Se o celular já liberou o site antes, ela vai direto para a câmera.
+Ao voltar das configurações do celular, a lista se atualiza sozinha.
+
+**Para liberar depois de recusar:**
+- **Android (Chrome):** ícone ao lado do endereço (cadeado ou ⓘ) →
+  *Permissões* → Câmera/Microfone → *Permitir*. Se continuar bloqueado:
+  Configurações do Android → *Apps → Chrome → Permissões*.
+- **iPhone (Safari):** *aA* na barra de endereço → *Configurações do Site* →
+  Câmera/Microfone → *Permitir*. Ou: Ajustes → *Apps → Safari*.
+
+## Horizontal ou vertical: quem decide é o computador
+
+No painel do SacraLink, cada câmera tem a opção **Orientação**: *Horizontal
+(16:9)* ou *Vertical (9:16)*. Ela fica no menu **⋯** do cartão da câmera
+(mudança na hora) e em **Câmeras e aparelhos → Editar**.
+
+- O celular recebe a escolha na hora. Se estiver na posição errada, aparece
+  no centro da tela **"Gire o celular na VERTICAL (em pé)"** (ou HORIZONTAL).
+- Em tela cheia, a página trava a tela na posição escolhida (Android). No
+  iPhone, o Safari não permite travar: basta girar o aparelho.
+- O painel compara com a imagem que está chegando e mostra **"Celular na
+  posição errada"** no cartão da câmera.
+- No OBS, a fonte se ajusta ao quadro sem distorcer: vídeo vertical numa cena
+  horizontal fica com faixas nas laterais (e vice-versa).
 
 O QR Code vale **5 minutos e um único celular**. Se expirar, gere outro.
 

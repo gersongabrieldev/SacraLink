@@ -4,7 +4,7 @@ import { useStore } from '../lib/store';
 import { sortedCameras } from '../lib/state';
 import { formatTime } from '../lib/format';
 import { t } from '../lib/i18n';
-import type { CameraView, Device, MediaProfile } from '../lib/types';
+import type { CameraView, Device, MediaProfile, Orientation } from '../lib/types';
 import { Confirm, Modal, Section, Toggle } from '../components/ui';
 
 /** QR Code de pareamento com contagem regressiva (token de uso único, 5 min). */
@@ -66,8 +66,9 @@ function EditCamera({ cam, profiles, onClose }: { cam: CameraView; profiles: Med
   const [ingestMode, setIngest] = useState(cam.ingestMode);
   const [isBackup, setBackup] = useState(cam.isBackup);
   const [audioSyncOffsetMs, setOffset] = useState(cam.audioSyncOffsetMs);
+  const [orientation, setOrientation] = useState<Orientation>(cam.orientation ?? 'landscape');
   const save = async () => {
-    const r = await run(() => api.patch(`/api/v1/cameras/${cam.id}`, { name, operatorName, profileId, ingestMode, isBackup, audioSyncOffsetMs }), 'Câmera atualizada');
+    const r = await run(() => api.patch(`/api/v1/cameras/${cam.id}`, { name, operatorName, profileId, ingestMode, isBackup, audioSyncOffsetMs, orientation }), 'Câmera atualizada');
     if (r !== undefined) {
       if (ingestMode !== cam.ingestMode && cam.obsSource.state === 'present') {
         await run(() => api.post(`/api/v1/obs/cameras/${cam.id}/source`, { recreate: true }), 'Fonte do OBS recriada no novo modo');
@@ -95,10 +96,22 @@ function EditCamera({ cam, profiles, onClose }: { cam: CameraView; profiles: Med
             </select>
           </div>
         </div>
-        <div>
-          <label className="label">Atraso do áudio (ms)</label>
-          <input className="input" type="number" min={-950} max={20000} value={audioSyncOffsetMs} onChange={(e) => setOffset(+e.target.value)} />
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="label">Orientação da imagem</label>
+            <select className="input" value={orientation} onChange={(e) => setOrientation(e.target.value as Orientation)}>
+              <option value="landscape">Horizontal (16:9)</option>
+              <option value="portrait">Vertical (9:16)</option>
+            </select>
+          </div>
+          <div>
+            <label className="label">Atraso do áudio (ms)</label>
+            <input className="input" type="number" min={-950} max={20000} value={audioSyncOffsetMs} onChange={(e) => setOffset(+e.target.value)} />
+          </div>
         </div>
+        <p className="text-xs text-muted">
+          O celular segue a orientação escolhida aqui: a tela dele pede para girar e trava na posição certa (quando o navegador permite).
+        </p>
         <Toggle checked={isBackup} onChange={setBackup} label="Câmera reserva" hint="Usada pelo fallback automático quando a câmera no ar perde o sinal (se habilitado)." />
         {ingestMode !== cam.ingestMode && cam.obsSource.state === 'present' && (
           <p className="text-xs text-warn">Trocar o modo recria a fonte desta câmera no OBS (somente a fonte criada pelo SacraLink).</p>

@@ -15,6 +15,8 @@ App Flutter que transforma o celular em câmera sem fio do SacraLink.
 - Tally do OBS em tempo real: **● NO AR**, **PREVIEW**, **CONECTADA**.
 - Zoom por pinça, controle deslizante e botões; lentes reais do aparelho;
   foco/exposição por toque; lanterna; microfone; qualidade.
+- Orientação horizontal (16:9) ou vertical (9:16) escolhida no painel: o app
+  trava a tela na orientação recebida e a imagem acompanha.
 - Controle remoto pelo operador central com confirmação e política de
   conflito (ver [contrato](../../packages/contracts/control-v1.md)).
 - **Localizar servidor na rede** (mDNS): celulares já pareados reencontram o

@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="style.css">
 <script type="module" src="app.js"></script>
 </head>
-<body data-screen="loading" data-tally="unknown" data-stream="idle" data-control="off">
+<body data-screen="loading" data-tally="unknown" data-stream="idle" data-control="off" data-orientation="landscape">
 
 <section id="screen-message" class="panel" aria-live="polite">
   <img src="logo.svg" alt="" class="logo">
@@ -31,6 +31,38 @@
   <button id="pair-btn" class="primary">Conectar</button>
   <p id="pair-status" class="status"></p>
   <p class="hint">Mantenha esta página aberta e a tela ligada durante a transmissão.</p>
+</section>
+
+<section id="screen-perms" class="panel">
+  <img src="logo.svg" alt="" class="logo">
+  <h1>Permissões do celular</h1>
+  <p>Para este celular funcionar como câmera, o navegador vai pedir:</p>
+  <ul class="perms">
+    <li id="perm-camera">
+      <span class="ico" aria-hidden="true">📷</span>
+      <div><b>Câmera</b><small>A imagem enviada ao OBS. O Chrome pode pedir também para "mover a câmera": é o zoom controlado pelo operador.</small></div>
+      <span class="state"></span>
+    </li>
+    <li id="perm-mic">
+      <span class="ico" aria-hidden="true">🎙</span>
+      <div><b>Microfone</b><small>O som do celular (o operador pode silenciar).</small></div>
+      <span class="state"></span>
+    </li>
+    <li id="perm-wake">
+      <span class="ico" aria-hidden="true">💡</span>
+      <div><b>Tela sempre ligada</b><small>Com a tela apagada, o celular pausa a câmera.</small></div>
+      <span class="state"></span>
+    </li>
+    <li id="perm-screen">
+      <span class="ico" aria-hidden="true">⛶</span>
+      <div><b>Tela cheia e orientação</b><small>Trava a tela na posição escolhida no computador (horizontal ou vertical).</small></div>
+      <span class="state"></span>
+    </li>
+  </ul>
+  <button id="perms-btn" class="primary">Permitir acesso</button>
+  <p id="perms-status" class="status" aria-live="polite"></p>
+  <div id="perms-help" class="help" hidden></div>
+  <button id="perms-nomic" class="link" hidden>Continuar sem microfone</button>
 </section>
 
 <section id="screen-camera">
@@ -72,7 +104,11 @@
     <button id="fullscreen" class="round" aria-label="Tela cheia" title="Tela cheia" hidden>⛶</button>
   </footer>
 
-  <div id="rotate-hint" class="rotate-hint" hidden>Gire o celular na horizontal</div>
+  <div id="rotate-hint" class="rotate-hint" hidden>
+    <div class="rotate-icon" aria-hidden="true">⟳</div>
+    <div id="rotate-text">Gire o celular na horizontal</div>
+    <small>Orientação escolhida no computador da igreja</small>
+  </div>
 </section>
 
 </body>

@@ -80,6 +80,7 @@ type Control struct {
 	// Tallies recebidos, em ordem.
 	Tallies  []control.Tally
 	Commands []control.Command
+	Configs  []map[string]any // mensagens "config" (nome, perfil, orientação)
 	Ack      control.HelloAck
 	zoom     float64
 	done     chan struct{}
@@ -150,6 +151,12 @@ func (c *Control) loop() {
 			c.mu.Lock()
 			c.Tallies = append(c.Tallies, t)
 			c.mu.Unlock()
+		case control.MsgConfig:
+			var cfg map[string]any
+			json.Unmarshal(env.Data, &cfg)
+			c.mu.Lock()
+			c.Configs = append(c.Configs, cfg)
+			c.mu.Unlock()
 		case control.MsgCommand:
 			var cmd control.Command
 			json.Unmarshal(env.Data, &cmd)
@@ -176,6 +183,16 @@ func (c *Control) HelloAck() control.HelloAck {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 	return c.Ack
+}
+
+// LastConfig retorna a última mensagem "config" recebida.
+func (c *Control) LastConfig() (map[string]any, bool) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	if len(c.Configs) == 0 {
+		return nil, false
+	}
+	return c.Configs[len(c.Configs)-1], true
 }
 
 // LastTally retorna o último tally recebido.

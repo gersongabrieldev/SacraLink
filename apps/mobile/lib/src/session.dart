@@ -56,6 +56,10 @@ class CameraSession extends ChangeNotifier {
   DateTime? liveSince;
   String? lastRemoteAction;
 
+  /// Orientação da imagem escolhida no painel: 'landscape' ou 'portrait'.
+  /// A tela da câmera trava nessa orientação (a imagem acompanha a tela).
+  String orientation = 'landscape';
+
   // Interno -------------------------------------------------------------------
   MediaStream? _stream;
   ControlChannel? _control;
@@ -339,6 +343,7 @@ class CameraSession extends ChangeNotifier {
       case 'hello_ack':
         _sessionId = data['sessionId'] as String? ?? '';
         cameraName = data['cameraName'] as String? ?? cameraName;
+        orientation = orientationOf(data['orientation']) ?? orientation;
         serverName = data['serverName'] as String? ?? serverName;
         if (data['profile'] is Map<String, dynamic>) {
           profile = QualityProfile.fromJson(data['profile'] as Map<String, dynamic>);
@@ -354,6 +359,11 @@ class CameraSession extends ChangeNotifier {
         };
       case 'config':
         cameraName = data['cameraName'] as String? ?? cameraName;
+        final o = orientationOf(data['orientation']);
+        if (o != null && o != orientation) {
+          orientation = o;
+          lastRemoteAction = o == 'portrait' ? 'Operador escolheu VERTICAL' : 'Operador escolheu HORIZONTAL';
+        }
         if (data['profile'] is Map<String, dynamic>) {
           unawaited(setProfile(QualityProfile.fromJson(data['profile'] as Map<String, dynamic>), local: false));
         }
@@ -563,3 +573,6 @@ class CameraSession extends ChangeNotifier {
     api.close();
   }
 }
+
+/// Valida a orientação recebida do servidor ('landscape' ou 'portrait').
+String? orientationOf(Object? v) => v == 'landscape' || v == 'portrait' ? v as String : null;

@@ -62,11 +62,24 @@ reais (ex.: câmera virtual do iPhone). Sem ele, o painel não promete zoom ópt
 
 | Tipo | Dados |
 |---|---|
-| `hello_ack` | `sessionId`, `deviceId`, `cameraId`, `cameraName`, `slot`, `serverName`, `whipPath`, `profile`, `heartbeatSec` |
+| `hello_ack` | `sessionId`, `deviceId`, `cameraId`, `cameraName`, `slot`, `serverName`, `whipPath`, `profile`, `heartbeatSec`, `orientation` |
 | `tally` | `state` (`on_air`/`preview`/`connected`/`unknown`), `program`, `preview`, `live`, `obsConnected`, `seq` |
 | `command` | ver abaixo |
-| `config` | `cameraName?`, `profile?` |
+| `config` | `cameraName?`, `profile?`, `orientation?` |
 | `pong` | — |
+
+### Orientação
+
+`orientation` é `landscape` (horizontal, 16:9) ou `portrait` (vertical, 9:16)
+e **quem decide é o painel** (`PATCH /api/v1/cameras/{id}`). O servidor envia
+no `hello_ack` e, quando muda, num `config`. O aparelho não altera a escolha:
+
+- **App:** trava a tela na orientação recebida (a imagem acompanha a tela).
+- **Navegador:** pede ao operador para girar o celular quando a imagem não
+  está na orientação recebida e, em tela cheia, trava a tela (quando o
+  navegador permite; o iPhone não permite).
+- O painel compara a orientação escolhida com a resolução recebida e avisa
+  "celular na posição errada".
 
 ### Tally
 

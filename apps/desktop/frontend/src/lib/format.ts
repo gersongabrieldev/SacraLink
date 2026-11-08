@@ -54,3 +54,12 @@ export function gridColumns(n: number): string {
   if (n <= 6) return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3';
   return 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4';
 }
+
+/**
+ * A imagem recebida está em orientação diferente da escolhida no painel?
+ * (ex.: câmera configurada como vertical e celular deitado). Sem vídeo, não.
+ */
+export function orientationMismatch(c: { orientation?: 'landscape' | 'portrait'; width?: number; height?: number }): boolean {
+  if (!c.width || !c.height || c.width === c.height) return false;
+  return (c.orientation === 'portrait') !== c.height > c.width;
+}

@@ -21,7 +21,8 @@ button, select, input { font: inherit; color: inherit; }
 body > section { display: none; }
 body[data-screen="message"] #screen-message,
 body[data-screen="loading"] #screen-message,
-body[data-screen="pair"] #screen-pair { display: flex; }
+body[data-screen="pair"] #screen-pair,
+body[data-screen="perms"] #screen-perms { display: flex; }
 body[data-screen="camera"] #screen-camera { display: block; }
 
 .panel { min-height: 100%; flex-direction: column; align-items: center; justify-content: center; gap: 12px;
@@ -34,6 +35,20 @@ body[data-screen="camera"] #screen-camera { display: block; }
 .panel .primary { align-self: stretch; }
 .status { min-height: 1.4em; color: var(--warn) !important; }
 .hint { font-size: 13px; }
+
+/* Permissões */
+.perms { list-style: none; margin: 4px 0; padding: 0; align-self: stretch; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.perms li { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface); border: 1px solid var(--border); }
+.perms .ico { font-size: 22px; width: 28px; text-align: center; }
+.perms li > div { flex: 1; min-width: 0; }
+.perms small { display: block; color: var(--muted); font-size: 12px; }
+.perms .state { font-size: 12px; font-weight: 700; white-space: nowrap; color: var(--muted); }
+.perms .state.ok { color: var(--preview); }
+.perms .state.bad { color: var(--onair); }
+.perms .state.warn { color: var(--warn); }
+.help { align-self: stretch; text-align: left; padding: 12px; border-radius: 12px; background: rgba(229,72,77,.12); border: 1px solid rgba(229,72,77,.5); font-size: 14px; }
+.help ol { margin: 6px 0 0; padding-left: 20px; }
+button.link { border: 0; background: none; color: var(--muted); text-decoration: underline; padding: 6px; }
 
 button.primary { border: 0; border-radius: 12px; padding: 12px 18px; font-weight: 700; background: var(--accent); color: #000; }
 button.primary:disabled { opacity: .5; }
@@ -81,11 +96,30 @@ body[data-tally="preview"] .tally { background: var(--preview); }
   display: flex; align-items: center; gap: 8px; }
 .spacer { flex: 1; }
 
-.rotate-hint { position: absolute; inset: 40% 10% auto; padding: 14px; border-radius: 12px; background: rgba(245,185,66,.95); color: #000; font-weight: 800; text-align: center; }
-@media (orientation: landscape) { .rotate-hint { display: none; } }
+.rotate-hint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: min(86%, 420px); padding: 16px; border-radius: 16px;
+  background: rgba(245,185,66,.95); color: #000; font-weight: 800; font-size: 20px; text-align: center; pointer-events: none; }
+.rotate-hint small { display: block; font-size: 12px; font-weight: 600; margin-top: 4px; }
+.rotate-icon { font-size: 40px; line-height: 1; animation: girar 1.6s ease-in-out infinite; }
+@keyframes girar { 0%, 30% { transform: rotate(0deg); } 70%, 100% { transform: rotate(90deg); } }
+
+/* Celular em pé (câmera vertical): controles em duas linhas. */
+@media (orientation: portrait) {
+  .topbar { flex-wrap: wrap; }
+  .chips { max-width: 100%; justify-content: flex-start; }
+  .bottombar { flex-wrap: wrap; justify-content: center; }
+  .bottombar #start { flex-basis: 100%; order: 2; }
+  .bottombar .spacer { display: none; }
+  .zoom, .lenses { bottom: 136px; }
+}
 @media (max-height: 520px) {
   .panel { gap: 8px; padding-top: 12px; padding-bottom: 12px; }
   .panel .logo { width: 44px; height: 44px; }
   .panel h1 { font-size: 19px; margin: 0; }
+  /* Celular deitado: permissões em duas colunas para caber sem rolar. */
+  #screen-perms { max-width: 860px; }
+  #screen-perms .perms { display: grid; grid-template-columns: 1fr 1fr; }
+  #screen-perms .perms li { padding: 8px 10px; }
+  #screen-perms .perms small { font-size: 11px; }
 }
+.notices { z-index: 2; }
 @media (max-width: 420px) { .zoom input { width: 34vw; } .lenses { bottom: 140px; } .zoom { bottom: 140px; } }
