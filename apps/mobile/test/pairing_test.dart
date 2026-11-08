@@ -15,6 +15,17 @@ void main() {
     expect(info.expired, isFalse);
   });
 
+  test('lê o link https do QR (câmera pelo navegador)', () {
+    final link = 'https://192.168.0.10:7443/cam/#v=1&id=srv1&n=Igreja+A%26B+%3D+S%C3%A3o+Jos%C3%A9&h=192.168.0.10%2C10.0.0.5'
+        '&p=7443&x=igreja.example.org%3A8443&fp=$fp&t=tokentokentokentokentoken&exp=$exp';
+    expect(isPairingLink(link), isTrue);
+    final info = parsePairingUri(link);
+    expect(info.serverName, 'Igreja A&B = São José');
+    expect(info.baseUrls, ['https://192.168.0.10:7443', 'https://10.0.0.5:7443', 'https://igreja.example.org:8443']);
+    expect(info.fingerprint, fp);
+    expect(info.token, 'tokentokentokentokentoken');
+  });
+
   test('IPv6 vira [endereço] na URL', () {
     final info = parsePairingUri('sacralink://pair?v=1&h=fd00::10&p=7443&fp=$fp&t=tokentokentokentokentoken&exp=$exp');
     expect(info.baseUrls.first, 'https://[fd00::10]:7443');
@@ -23,6 +34,8 @@ void main() {
   test('rejeita QR de outro aplicativo ou incompleto', () {
     for (final bad in [
       'https://example.org',
+      'https://192.168.0.10:7443/cam/',
+      'https://192.168.0.10:7443/outra/#v=1&h=1.2.3.4&p=7443&fp=$fp&t=tokentokentokentokentoken',
       'sacralink://pair?v=2&h=1.2.3.4&p=7443&fp=$fp&t=tokentokentokentokentoken',
       'sacralink://pair?v=1&h=1.2.3.4&p=7443&fp=curto&t=tokentokentokentokentoken',
       'sacralink://pair?v=1&h=1.2.3.4&p=7443&fp=$fp&t=curto',

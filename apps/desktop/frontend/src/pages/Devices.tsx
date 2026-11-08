@@ -36,7 +36,14 @@ export function PairingModal({ open, onClose, cameraId }: { open: boolean; onClo
         {qr && left > 0 ? (
           <>
             <img src={qr.qrPng} alt="QR Code de pareamento" className="h-64 w-64 rounded-lg bg-white p-2" />
-            <p className="text-sm">No app <b>SacraLink Camera</b>, toque em <b>Ler QR Code</b>.</p>
+            <p className="text-sm">
+              Aponte a <b>câmera do celular</b> para o QR Code e abra o link: a câmera funciona no navegador, sem instalar nada
+              (Chrome no Android, Safari no iPhone).
+            </p>
+            <p className="text-xs text-muted">
+              Na primeira vez, o navegador avisa que a conexão não é particular (certificado deste computador): toque em
+              <b> Avançado → Continuar</b>. O app SacraLink Camera também lê este QR Code.
+            </p>
             <p className="text-xs text-muted">Código de uso único · expira em {Math.floor(left / 60)}:{String(left % 60).padStart(2, '0')}</p>
           </>
         ) : (

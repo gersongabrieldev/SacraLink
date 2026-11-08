@@ -26,6 +26,18 @@ Não é necessário instalar Go, Node.js, Python, Docker ou WSL.
    - autorização para criar fontes/cenas "SacraLink — …" no OBS;
    - regras de firewall (se não marcadas no instalador).
 
+## Conectar os celulares
+
+No painel: **Câmeras e aparelhos → Parear celular**. No celular, aponte a
+câmera para o QR Code e abra o link — a câmera funciona no navegador, sem
+instalar aplicativo. Na primeira vez, aceite o aviso de certificado (é o
+certificado deste computador). Passo a passo e limitações:
+[câmera pelo navegador](../mobile/camera-navegador.md).
+
+**Reserve o IP deste computador no roteador** (reserva DHCP): os celulares
+conectados pelo navegador guardam o endereço e precisariam ser pareados de
+novo se ele mudar.
+
 ## Funcionamento
 
 - `sacralink-server.exe` fica na **bandeja** (perto do relógio) e continua

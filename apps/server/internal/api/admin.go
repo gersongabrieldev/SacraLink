@@ -80,11 +80,12 @@ type Deps struct {
 
 // Server implementa as duas APIs.
 type Server struct {
-	d       Deps
-	auth    *Auth
-	log     *slog.Logger
-	origins []string
-	hosts   []string
+	d          Deps
+	devTickets deviceTickets
+	auth       *Auth
+	log        *slog.Logger
+	origins    []string
+	hosts      []string
 }
 
 // New cria o servidor de APIs.

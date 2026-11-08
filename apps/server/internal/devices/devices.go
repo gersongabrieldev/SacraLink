@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/url"
 	"strconv"
 	"strings"
@@ -91,7 +92,7 @@ func (s *Service) CreatePairing(ctx context.Context, label, cameraID string) (*P
 
 // PairingURI monta o conteúdo do QR Code:
 //
-//	sacralink://pair?v=1&id=..&n=..&h=ip1,ip2&p=7443&x=host:port&fp=..&t=..&exp=..
+//	https://192.168.0.10:7443/cam/#v=1&id=..&n=..&h=ip1,ip2&p=7443&x=host:port&fp=..&t=..&exp=..
 func PairingURI(e Endpoints, token string, expMs int64) string {
 	q := url.Values{}
 	q.Set("v", "1")
@@ -99,17 +100,56 @@ func PairingURI(e Endpoints, token string, expMs int64) string {
 	q.Set("n", e.ServerName)
 	q.Set("h", strings.Join(e.LANHosts, ","))
 	q.Set("p", strconv.Itoa(e.Port))
+	external := ""
 	if e.ExternalHost != "" {
 		port := e.ExternalPort
 		if port == 0 {
 			port = e.Port
 		}
-		q.Set("x", e.ExternalHost+":"+strconv.Itoa(port))
+		external = net.JoinHostPort(strings.Trim(e.ExternalHost, "[]"), strconv.Itoa(port))
+		q.Set("x", external)
 	}
 	q.Set("fp", e.FingerprintHex)
 	q.Set("t", token)
 	q.Set("exp", strconv.FormatInt(expMs/1000, 10))
-	return "sacralink://pair?" + q.Encode()
+	// Link https: a câmera do celular abre a página no navegador (/cam/).
+	// Os dados ficam no fragmento (#), que o navegador nunca envia ao
+	// servidor; o app nativo lê o mesmo link.
+	host := external
+	switch {
+	case len(e.LANHosts) > 0:
+		host = net.JoinHostPort(e.LANHosts[0], strconv.Itoa(e.Port))
+	case host == "":
+		host = net.JoinHostPort("localhost", strconv.Itoa(e.Port))
+	}
+	return "https://" + host + "/cam/#" + q.Encode()
+}
+
+// ErrNotPairingURI indica que o conteúdo lido não é um QR do SacraLink.
+var ErrNotPairingURI = errors.New("não é um QR Code de pareamento do SacraLink")
+
+// PairingParams extrai os parâmetros do QR Code. Aceita o link atual
+// (https://host:porta/cam/#…) e o formato anterior (sacralink://pair?…).
+func PairingParams(uri string) (url.Values, error) {
+	u, err := url.Parse(strings.TrimSpace(uri))
+	if err != nil {
+		return nil, ErrNotPairingURI
+	}
+	var q url.Values
+	switch {
+	case u.Scheme == "https" && u.Path == "/cam/":
+		if q, err = url.ParseQuery(u.EscapedFragment()); err != nil {
+			return nil, ErrNotPairingURI
+		}
+	case u.Scheme == "sacralink" && u.Host == "pair":
+		q = u.Query()
+	default:
+		return nil, ErrNotPairingURI
+	}
+	if q.Get("v") != "1" || q.Get("t") == "" {
+		return nil, ErrNotPairingURI
+	}
+	return q, nil
 }
 
 // DeviceInfo são os dados enviados pelo app no pareamento.

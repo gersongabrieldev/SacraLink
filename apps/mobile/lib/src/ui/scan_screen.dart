@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../pairing.dart';
+
 /// Leitor do QR Code de pareamento. Retorna o texto lido.
 class ScanScreen extends StatefulWidget {
   const ScanScreen({super.key});
@@ -29,7 +31,7 @@ class _ScanScreenState extends State<ScanScreen> {
           onDetect: (capture) {
             if (_done) return;
             final value = capture.barcodes.firstOrNull?.rawValue;
-            if (value != null && value.startsWith('sacralink://')) {
+            if (value != null && isPairingLink(value)) {
               _done = true;
               Navigator.of(context).pop(value);
             }

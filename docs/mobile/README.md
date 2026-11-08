@@ -2,6 +2,11 @@
 
 App Flutter que transforma o celular em câmera sem fio do SacraLink.
 
+> **Não quer instalar nada?** A [câmera pelo navegador](camera-navegador.md)
+> é o caminho principal: basta ler o QR Code com a câmera do celular. O app é
+> recomendado para 4G/5G, lentes e zoom completos, temperatura do aparelho e
+> pinning do certificado. Ele lê o mesmo QR Code.
+
 ## Recursos
 
 - Pareamento por QR Code (ou código manual), com pinning do certificado do

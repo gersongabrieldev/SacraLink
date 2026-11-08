@@ -9,6 +9,7 @@ Rodar tudo:
 
 ```bash
 scripts/dev/test-server.sh                      # servidor Go (repete só bloqueios do Smart App Control)
+SACRALINK_BROWSER_TEST=1 scripts/dev/test-server.sh ./internal/app   # + câmera pelo navegador (abre Edge/Chrome headless)
 cd apps/desktop/frontend && npm test            # painel
 cd apps/mobile && flutter analyze && flutter test   # app (após scripts/mobile/bootstrap.sh)
 ```
@@ -26,7 +27,9 @@ cd apps/mobile && flutter analyze && flutter test   # app (após scripts/mobile/
 | Núcleo | `internal/core` | Máquina de estados, detecção de fluxo, criação de fonte, RECONNECTING, limite de transmissões, **fallback para câmera reserva**, Program intocado sem fallback |
 | WHIP | `internal/whip` | Reescrita de Location, ETag/Link, isolamento entre câmeras, SDP inválido barrado |
 | Rede | `internal/netdiag` | Classificação (CGNAT 100.64/10 etc.), STUN, orientações de CGNAT/DNS/portas |
-| **Ponta a ponta** | `internal/app/e2e_test.go` | Setup → OBS → pareamento → controle → **WHIP com H.264 + Opus reais** → MediaMTX real → **RTSP lido como o OBS** → fonte criada → tally NO AR no celular → troca manual de cena → zoom confirmado → player → queda → credencial errada recusada |
+| **Ponta a ponta** | `internal/app/e2e_test.go` | Setup → OBS → pareamento → controle → **WHIP com H.264 + Opus reais** → MediaMTX real → **RTSP lido como o OBS** → fonte criada → tally NO AR no celular → troca manual de cena → zoom confirmado → player → queda → credencial errada recusada → página `/cam/` com CSP → **ticket do WebSocket de uso único** |
+| **Câmera pelo navegador** | `internal/app/browser_test.go` (`SACRALINK_BROWSER_TEST=1`) | **Edge/Chrome reais em modo headless** com câmera e microfone simulados do navegador: link do QR → pareamento na página (token sai do histórico) → controle por ticket → WHIP → MediaMTX real → **RTSP H.264 + Opus** → **NO AR / CONECTADA na página** → mudo remoto confirmado → zoom "não suportado" honesto → conflito com ajuste local e `force` → parar → **revogação apaga a credencial** |
+| Câmera pelo navegador | `internal/webcam`, `internal/api` | CSP sem injeção pelo `Host`, arquivos embutidos, ticket de uso único e expiração |
 | Painel | `src/lib/state.test.ts` | Reducer, formatação, grade |
 | App | `test/*.dart` | QR Code, conflito/idempotência, expiração com relógio dessincronizado, adaptação de qualidade |
 
@@ -44,6 +47,13 @@ Resultado medido no teste ponta a ponta (MediaMTX v1.21.3 real): o RTSP
 entregue ao "OBS" trouxe **630 pacotes de vídeo e 100 de áudio em 2 s**
 (H.264 + Opus), com bitrate medido no servidor de ~2,8 Mbps — coerente com o
 vídeo sintético I_PCM de 160×96 a 15 FPS.
+
+Câmera pelo navegador (2026-11-08, Edge headless no Windows 11 do
+mantenedor, MediaMTX v1.21.3 real): o RTSP trouxe **H.264 + Opus**; o vídeo
+**começou em 960×540 e chegou a 1280×720 em ~5 s** (a câmera simulada do
+navegador gera 20 FPS). Sem a taxa inicial (`x-google-start-bitrate`), o
+mesmo teste começava em 320×180 — correção feita a partir dessa medição.
+Capturas de tela opcionais: `SACRALINK_BROWSER_SHOTS=<pasta>`.
 
 ### Problemas reais encontrados pelo CI e corrigidos
 
@@ -66,7 +76,8 @@ vídeo sintético I_PCM de 160×96 a 15 FPS.
 | Item | Por quê |
 |---|---|
 | OBS Studio real | Os testes usam um OBS simulado com o mesmo protocolo; o OBS 32.0.1 instalado na máquina não foi alterado sem autorização |
-| Android e iPhone reais | Sem aparelhos no ambiente; o app só foi analisado/compilado no CI |
+| Android e iPhone reais | Sem aparelhos no ambiente; o app só foi analisado/compilado no CI e a câmera pelo navegador foi testada com Chromium headless e câmera simulada |
+| Safari do iPhone | WebSocket/WebRTC com certificado autoassinado aceito manualmente — comportamento a confirmar em aparelho |
 | Latência glass-to-glass | Exige celular + OBS reais (metodologia abaixo) |
 | Carga com 8 celulares | Exige aparelhos e hardware de referência ([performance.md](performance.md)) |
 | Rede 4G/5G, troca Wi-Fi→5G, CGNAT, IPv6 | Exige rede externa real |

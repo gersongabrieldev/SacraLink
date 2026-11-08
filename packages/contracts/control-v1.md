@@ -1,14 +1,19 @@
 # Protocolo de controle v1 (celular ↔ servidor)
 
-Implementação de referência: `apps/server/internal/control` (Go) e
-`apps/mobile/lib/src/control_channel.dart` + `session.dart` (Dart).
+Implementações de referência: `apps/server/internal/control` (Go),
+`apps/mobile/lib/src/control_channel.dart` + `session.dart` (Dart) e
+`apps/server/internal/webcam/static/app.js` (câmera pelo navegador).
 
 ## Transporte
 
 - `wss://<servidor>:7443/device/v1/ws`, subprotocolo `sacralink.control.v1`.
-- TLS 1.3 com **pinning**: o app aceita apenas o certificado cuja impressão
-  digital SHA-256 veio no QR Code.
-- Autenticação: cabeçalho `Authorization: Bearer <deviceId>.<segredo>`.
+- TLS 1.3 com **pinning** no app: ele aceita apenas o certificado cuja
+  impressão digital SHA-256 veio no QR Code. O navegador não faz pinning
+  (ver ADR-0006).
+- Autenticação: cabeçalho `Authorization: Bearer <deviceId>.<segredo>` (app)
+  ou, no navegador — cuja API WebSocket não envia cabeçalhos —,
+  `?ticket=<ticket>` obtido em `POST /device/v1/ws-ticket` com a credencial.
+  O ticket vale 30 s e **uma única conexão**.
 - Mensagens de texto JSON, até 64 KiB.
 
 ## Envelope

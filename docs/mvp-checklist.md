@@ -15,8 +15,8 @@ do OBS Studio real ainda precisam de validação manual (ver
 | 1 | Instalação por `.exe` no Windows | 🟨 | `SacraLink-Setup-x64.exe` **gerado pelo CI** (artefato privado, 30 MB); falta instalar em VMs Windows 10/11 limpas e assinar |
 | 2 | Serviços iniciam sem Docker/terminal | 🟩 | `sacralink-server.exe` (subsistema GUI, bandeja) executado no Windows 11; supervisor do MediaMTX testado com o binário real |
 | 3 | App mostra estado de funcionamento | 🟩 | Cabeçalho do painel validado visualmente (servidor, OBS, câmeras, IP, CPU/RAM, rede, AO VIVO) |
-| 4 | Android transmite vídeo real por Wi-Fi | 🟨 | App analisado, testado e **APK de depuração gerado no CI**; **falta teste em aparelho** |
-| 5 | iPhone transmite vídeo real por Wi-Fi | 🟨 | **Build iOS sem assinatura passou no CI**; falta conta Apple Developer e teste em aparelho |
+| 4 | Android transmite vídeo real por Wi-Fi | 🟨 | **Câmera pelo navegador** testada de ponta a ponta com o motor do Chrome (Edge/Chrome headless, câmera simulada → H.264 + Opus no RTSP); app com **APK de depuração gerado no CI**; **falta teste em aparelho** |
+| 5 | iPhone transmite vídeo real por Wi-Fi | 🟨 | Câmera pelo navegador dispensa a conta Apple Developer, mas o Safari ainda não foi testado; **build iOS do app sem assinatura passou no CI**; falta teste em aparelho |
 | 6 | Servidor recebe os fluxos | 🟩 | Teste ponta a ponta: WHIP com H.264 + Opus reais aceito pelo MediaMTX real (CI Windows e Linux) |
 | 7 | Vídeo reproduzido no OBS em fonte utilizável | 🟨 | RTSP verificado como o OBS consome (DESCRIBE/SETUP/PLAY, 630 pacotes de vídeo + 100 de áudio em 2 s); prévia WHEP decodificada no painel. **Falta validar no OBS Studio real** |
 | 8 | Áudio recebido e controlável | 🟨 | Opus no fluxo e no RTSP (teste); mute/volume/offset via obs-websocket (OBS simulado). **Falta OBS real** |
@@ -24,10 +24,10 @@ do OBS Studio real ainda precisam de validação manual (ver
 | 10 | Conexão OBS autenticada | 🟩 | Autenticação SHA-256 testada (vetor independente), senha errada/ausente; DPAPI real |
 | 11 | Painel identifica a câmera conectada | 🟩 | Teste ponta a ponta + demonstração visual com câmeras sintéticas |
 | 12 | Painel coloca a câmera em Preview/Program | 🟩 | Testes com Studio Mode, confirmação de troca direta, transição; **falta OBS real** |
-| 13 | Celular recebe NO AR corretamente | 🟩 | Teste ponta a ponta (NO AR → CONECTADA ao trocar cena no OBS); cenas aninhadas e grupos no motor de tally; **falta aparelho real** |
+| 13 | Celular recebe NO AR corretamente | 🟩 | Testes ponta a ponta (celular simulado e **página no navegador real**: NO AR → CONECTADA ao trocar cena no OBS); cenas aninhadas e grupos no motor de tally; **falta aparelho real** |
 | 14 | Zoom remoto em aparelho compatível | 🟨 | Protocolo, validação, conflito e confirmação testados com celular simulado; zoom nativo via flutter_webrtc + faixa real via plugin; **falta aparelho real** |
 | 15 | Logs e tratamento de falhas | 🟩 | Logs JSON rotativos; reinício automático do MediaMTX; fallback de buffer UDP; reconexão do OBS; mensagens amigáveis |
-| 16 | Documentação de instalação e teste | 🟩 | [Instalação](installation/guia-instalacao.md), [OBS](obs/configuracao-obs.md), [rede externa](networking/acesso-externo.md), [testes](testing.md), [app](mobile/README.md) |
+| 16 | Documentação de instalação e teste | 🟩 | [Instalação](installation/guia-instalacao.md), [OBS](obs/configuracao-obs.md), [rede externa](networking/acesso-externo.md), [testes](testing.md), [câmera pelo navegador](mobile/camera-navegador.md), [app](mobile/README.md) |
 
 ## Pendências conhecidas (não bloqueiam o código, mas bloqueiam o "MVP concluído")
 

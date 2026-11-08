@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0e14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>SacraLink Câmera</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="logo.svg">
+<link rel="apple-touch-icon" href="logo.svg">
+<link rel="stylesheet" href="style.css">
+<script type="module" src="app.js"></script>
+</head>
+<body data-screen="loading" data-tally="unknown" data-stream="idle" data-control="off">
+
+<section id="screen-message" class="panel" aria-live="polite">
+  <img src="logo.svg" alt="" class="logo">
+  <h1>SacraLink Câmera</h1>
+  <p id="message-text">Carregando…</p>
+</section>
+
+<section id="screen-pair" class="panel">
+  <img src="logo.svg" alt="" class="logo">
+  <h1>Conectar câmera</h1>
+  <p>Este celular será uma câmera de <b id="pair-server">SacraLink</b>.</p>
+  <label for="pair-name">Nome deste celular ou do operador</label>
+  <input id="pair-name" maxlength="60" autocomplete="off" placeholder="Ex.: Pedro — altar">
+  <button id="pair-btn" class="primary">Conectar</button>
+  <p id="pair-status" class="status"></p>
+  <p class="hint">Mantenha esta página aberta e a tela ligada durante a transmissão.</p>
+</section>
+
+<section id="screen-camera">
+  <video id="preview" autoplay playsinline muted></video>
+  <div id="focus-ring" hidden></div>
+
+  <header class="topbar">
+    <div id="tally" class="tally">OBS SEM CONEXÃO</div>
+    <div class="names">
+      <div id="cam-name">Câmera</div>
+      <div id="server-name"></div>
+    </div>
+    <div id="chips" class="chips"></div>
+  </header>
+
+  <div id="notices" class="notices" aria-live="polite"></div>
+
+  <div id="zoom-box" class="zoom" hidden>
+    <button id="zoom-out" class="round" aria-label="Afastar">−</button>
+    <input id="zoom" type="range" min="1" max="1" step="0.1" value="1" aria-label="Zoom">
+    <span id="zoom-value">1,0×</span>
+    <button id="zoom-in" class="round" aria-label="Aproximar">+</button>
+  </div>
+
+  <div id="lenses" class="lenses"></div>
+
+  <footer class="bottombar">
+    <button id="start" class="primary">Iniciar transmissão</button>
+    <span class="spacer"></span>
+    <button id="flip" class="round" aria-label="Trocar câmera" title="Trocar câmera">⟲</button>
+    <button id="torch" class="round" aria-label="Lanterna" title="Lanterna" hidden>☀</button>
+    <button id="mic" class="round" aria-label="Microfone" title="Microfone">🎙</button>
+    <select id="quality" aria-label="Qualidade">
+      <option value="economico">480p</option>
+      <option value="equilibrado" selected>720p</option>
+      <option value="alta">1080p</option>
+      <option value="alta60">1080p 60</option>
+    </select>
+    <button id="fullscreen" class="round" aria-label="Tela cheia" title="Tela cheia" hidden>⛶</button>
+  </footer>
+
+  <div id="rotate-hint" class="rotate-hint" hidden>Gire o celular na horizontal</div>
+</section>
+
+</body>
+</html>

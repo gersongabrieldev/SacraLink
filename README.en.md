@@ -22,7 +22,10 @@ no VPS, no cloud relay, no Docker.</p>
 
 ## What it does
 
-- Phones publish H.264 + Opus over **WebRTC (WHIP)** straight to the church PC.
+- **No app install needed**: point the phone camera at the QR code and the
+  camera page opens in the browser (Chrome/Safari), served by the church PC
+  itself. Phones publish H.264 + Opus over **WebRTC (WHIP)** straight to the
+  church PC. The native Flutter app is optional (4G/5G, real lenses, pinning).
 - A local **MediaMTX** (managed by SacraLink, loopback-only) remuxes to
   **RTSP** for OBS — no transcoding.
 - One OBS source + scene per camera via **obs-websocket 5.x**, idempotent and
@@ -44,16 +47,19 @@ flutter_webrtc + native Kotlin/Swift plugin (mobile), Inno Setup 6 (installer).
 ## Security
 
 Loopback-only admin API with bcrypt password and lockout; single-use 5-minute
-pairing tokens (no passwords in the QR code); TLS 1.3 with certificate pinning
-for devices; revocable device credentials stored as hashes; OBS password
+pairing tokens (no passwords in the QR code, carried in the URL fragment);
+TLS 1.3 with certificate pinning in the native app (the browser relies on the
+user accepting the church PC's self-signed certificate); revocable device credentials stored as hashes; OBS password
 encrypted with Windows DPAPI; remote access disabled by default.
 
 ## Known limitations
 
 No remote access behind CG-NAT without IPv6 (no relay by design); the camera
 stops in background/locked screen (OS restriction); optical zoom depends on the
-device; 8-camera support not yet validated on real devices; unsigned binaries
-may be blocked by Windows Smart App Control.
+device; the browser camera shows a certificate warning on first use, has no
+4G/5G support yet and has not been tested on real phones yet (only with
+headless Chromium and a fake camera); 8-camera support not yet validated on
+real devices; unsigned binaries may be blocked by Windows Smart App Control.
 
 ## License
 

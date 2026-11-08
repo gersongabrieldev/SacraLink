@@ -1,6 +1,9 @@
 // Leitura do QR Code de pareamento do SacraLink.
 //
-// Formato: sacralink://pair?v=1&id=..&n=..&h=ip1,ip2&p=7443&x=host:port&fp=..&t=..&exp=..
+// Formato atual (abre a câmera pelo navegador se lido pela câmera do celular):
+//   https://192.168.0.10:7443/cam/#v=1&id=..&n=..&h=ip1,ip2&p=7443&x=host:port&fp=..&t=..&exp=..
+// Formato anterior, ainda aceito:
+//   sacralink://pair?v=1&...
 // O QR nunca contém senha do administrador ou credencial reutilizável: o token
 // `t` é de uso único e expira em 5 minutos.
 
@@ -49,13 +52,30 @@ class PairingFormatException implements Exception {
 
 final _hex64 = RegExp(r'^[0-9a-f]{64}$');
 
+/// Parâmetros do QR (no fragmento do link https ou na query do formato antigo).
+Map<String, String>? _pairingParams(String raw) {
+  final uri = Uri.tryParse(raw.trim());
+  if (uri == null) return null;
+  if (uri.scheme == 'https' && uri.path == '/cam/' && uri.hasFragment) {
+    try {
+      return Uri.splitQueryString(uri.fragment);
+    } on FormatException {
+      return null;
+    }
+  }
+  if (uri.scheme == 'sacralink' && uri.host == 'pair') return uri.queryParameters;
+  return null;
+}
+
+/// Indica se o conteúdo lido parece um QR de pareamento (para o leitor).
+bool isPairingLink(String raw) => _pairingParams(raw)?['t'] != null;
+
 /// Interpreta e valida o conteúdo do QR Code.
 PairingInfo parsePairingUri(String raw) {
-  final uri = Uri.tryParse(raw.trim());
-  if (uri == null || uri.scheme != 'sacralink' || uri.host != 'pair') {
+  final q = _pairingParams(raw);
+  if (q == null) {
     throw PairingFormatException('Este QR Code não é de pareamento do SacraLink.');
   }
-  final q = uri.queryParameters;
   if (q['v'] != '1') {
     throw PairingFormatException('Versão do QR Code incompatível. Atualize o aplicativo.');
   }

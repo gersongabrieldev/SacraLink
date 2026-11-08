@@ -17,10 +17,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/coder/websocket"
+
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/app"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/media"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/obs/obstest"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/testpub"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/tlsutil"
 )
 
 func freePort(t *testing.T) int {
@@ -295,5 +298,65 @@ func TestPontaAPonta(t *testing.T) {
 	bad.Secret = strings.Repeat("x", 43)
 	if _, err := testpub.Connect(ctx, &bad); err == nil {
 		t.Fatal("credencial errada deveria ser rejeitada")
+	}
+
+	// 14) Câmera pelo navegador: página servida com CSP estrita e WebSocket
+	// por ticket de uso único (o navegador não envia Authorization no WS).
+	dev := &http.Client{Timeout: 10 * time.Second, Transport: &http.Transport{TLSClientConfig: tlsutil.PinnedClientConfig(creds.Fingerprint)},
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	for path, ctype := range map[string]string{"/cam/": "text/html", "/cam/app.js": "javascript", "/cam/style.css": "text/css"} {
+		resp, err := dev.Get(creds.BaseURL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		csp := resp.Header.Get("Content-Security-Policy")
+		if resp.StatusCode != 200 || !strings.Contains(resp.Header.Get("Content-Type"), ctype) ||
+			!strings.Contains(csp, "script-src 'self'") || !strings.Contains(csp, "frame-ancestors 'none'") {
+			t.Fatalf("%s: %d %q %q", path, resp.StatusCode, resp.Header.Get("Content-Type"), csp)
+		}
+	}
+	if resp, err := dev.Get(creds.BaseURL + "/"); err != nil || resp.StatusCode != http.StatusFound || resp.Header.Get("Location") != "/cam/" {
+		t.Fatalf("raiz deveria levar à câmera: %v %v", err, resp)
+	}
+	ticket := func(auth string) (int, string) {
+		req, _ := http.NewRequest("POST", creds.BaseURL+"/device/v1/ws-ticket", nil)
+		req.Header.Set("Authorization", auth)
+		resp, err := dev.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+		var out struct{ Ticket string }
+		_ = json.NewDecoder(resp.Body).Decode(&out)
+		return resp.StatusCode, out.Ticket
+	}
+	if st, _ := ticket("Bearer " + bad.DeviceID + "." + bad.Secret); st != 401 {
+		t.Fatalf("ticket com credencial errada: %d", st)
+	}
+	st, tk := ticket("Bearer " + creds.DeviceID + "." + creds.Secret)
+	if st != 200 || len(tk) < 20 {
+		t.Fatalf("ticket: %d %q", st, tk)
+	}
+	wsURL := strings.Replace(creds.BaseURL, "https://", "wss://", 1) + "/device/v1/ws?ticket=" + url.QueryEscape(tk)
+	dial := func() error {
+		c, resp, err := websocket.Dial(ctx, wsURL, &websocket.DialOptions{HTTPClient: dev, Subprotocols: []string{"sacralink.control.v1"}})
+		if resp != nil && resp.Body != nil {
+			resp.Body.Close()
+		}
+		if err == nil {
+			c.CloseNow()
+		}
+		return err
+	}
+	if err := dial(); err != nil {
+		t.Fatalf("WebSocket com ticket: %v", err)
+	}
+	if err := dial(); err == nil {
+		t.Fatal("o ticket só pode ser usado uma vez")
+	}
+	wsURL = strings.Replace(creds.BaseURL, "https://", "wss://", 1) + "/device/v1/ws?ticket=inexistente"
+	if err := dial(); err == nil {
+		t.Fatal("ticket inexistente deveria ser recusado")
 	}
 }

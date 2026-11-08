@@ -1,0 +1,13 @@
+{
+  "name": "SacraLink Câmera",
+  "short_name": "SacraLink",
+  "description": "Transforma o celular em câmera sem fio do SacraLink",
+  "start_url": "/cam/",
+  "scope": "/cam/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#0b0e14",
+  "theme_color": "#0b0e14",
+  "lang": "pt-BR",
+  "icons": [{ "src": "logo.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }]
+}

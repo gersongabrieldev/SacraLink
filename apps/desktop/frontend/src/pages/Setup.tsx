@@ -66,7 +66,8 @@ export function Setup({ adminConfigured, onDone }: { adminConfigured: boolean; o
           <div className="space-y-4">
             <p className="flex items-center gap-2 text-preview"><CheckCircle2 /> Tudo pronto!</p>
             <p className="text-sm text-muted">
-              Para conectar um celular, abra <b>Câmeras e aparelhos → Parear celular</b> e leia o QR Code com o app SacraLink Camera.
+              Para conectar um celular, abra <b>Câmeras e aparelhos → Parear celular</b> e aponte a câmera do celular para o QR Code
+              (abre no navegador; o app SacraLink Camera também funciona).
             </p>
             <button className="btn-primary" onClick={() => run(async () => { await api.post('/api/v1/setup/complete'); onDone(); })}>
               Abrir o painel <ChevronRight size={16} />

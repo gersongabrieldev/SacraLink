@@ -35,8 +35,10 @@ não sabem o que está realmente no ar no OBS.
 
 ## O que o SacraLink faz
 
-- **Celulares viram câmeras**: o app SacraLink Camera envia H.264 + Opus por
-  **WebRTC (WHIP)** direto ao computador da igreja.
+- **Celulares viram câmeras sem instalar nada**: aponte a câmera do celular
+  para o QR Code e a **câmera abre no navegador** (Chrome/Safari), enviando
+  H.264 + Opus por **WebRTC (WHIP)** direto ao computador da igreja. O app
+  nativo SacraLink Camera é opcional (4G/5G, lentes reais, pinning).
 - **Integração real com o OBS** (obs-websocket 5.x): cria uma fonte e uma cena
   por câmera, sem duplicar em reconexões e sem tocar no que é seu.
 - **Tally de verdade**: o celular mostra **● NO AR / PREVIEW / CONECTADA**
@@ -56,7 +58,7 @@ não sabem o que está realmente no ar no OBS.
 ## Arquitetura
 
 ```
-Celulares (Flutter) ──HTTPS/WSS :7443──▶ sacralink-server.exe ──▶ MediaMTX (somente loopback)
+Celulares (navegador ou app) ──HTTPS/WSS :7443──▶ sacralink-server.exe ──▶ MediaMTX (somente loopback)
         └──────── mídia WebRTC UDP/TCP :8189 ─────────────────▶ MediaMTX
 SacraLink.exe (painel Wails) ──127.0.0.1:7380──▶ sacralink-server.exe ──ws 127.0.0.1:4455──▶ OBS
 Media Source do OBS ──rtsp://127.0.0.1:8554──▶ MediaMTX   (sem transcodificação)
@@ -66,7 +68,8 @@ Media Source do OBS ──rtsp://127.0.0.1:8554──▶ MediaMTX   (sem transco
 |---|---|
 | Servidor | Go 1.27, SQLite (Go puro), supervisor do MediaMTX v1.21, cliente obs-websocket 5.x próprio |
 | Painel | Wails v2, React 19, TypeScript, Tailwind CSS 4 |
-| App móvel | Flutter 3.47, flutter_webrtc, plugin nativo (Kotlin/Swift) para lentes e zoom reais |
+| Câmera no navegador | HTML/CSS/JavaScript puro servido pelo próprio servidor (`/cam/`): getUserMedia + WebRTC/WHIP, sem build e sem dependências |
+| App móvel (opcional) | Flutter 3.47, flutter_webrtc, plugin nativo (Kotlin/Swift) para lentes e zoom reais |
 | Instalador | Inno Setup 6 (`SacraLink-Setup-x64.exe`) |
 
 Decisões e justificativas: [plano técnico](docs/architecture/00-plano-tecnico.md)
@@ -77,7 +80,10 @@ e [ADRs](docs/architecture/adr/).
 - Painel só em `127.0.0.1`, com senha (bcrypt), bloqueio por tentativas e
   proteção contra DNS rebinding/CSRF.
 - Celulares pareados por **QR Code com token de uso único (5 min)** — sem
-  senha no QR — e **TLS 1.3 com pinning** do certificado do servidor.
+  senha no QR, com os dados no fragmento do link (nunca enviado ao servidor) —
+  e **TLS 1.3**; o app nativo faz **pinning** do certificado, o navegador
+  depende do aceite do certificado do computador da igreja
+  ([ADR-0006](docs/architecture/adr/0006-camera-pelo-navegador.md)).
 - Credenciais dos aparelhos revogáveis, guardadas só como hash; senha do OBS
   cifrada com DPAPI; MediaMTX e obs-websocket nunca expostos na rede.
 - Acesso externo desligado por padrão. Detalhes em [SECURITY.md](SECURITY.md).
@@ -89,7 +95,7 @@ e [ADRs](docs/architecture/adr/).
 | Instalar na igreja | [Guia de instalação](docs/installation/guia-instalacao.md) |
 | Configurar o OBS | [Configuração do OBS](docs/obs/configuracao-obs.md) |
 | 4G/5G sem VPS | [Acesso externo](docs/networking/acesso-externo.md) |
-| App do celular | [SacraLink Camera](docs/mobile/README.md) |
+| Usar o celular como câmera | [Câmera pelo navegador](docs/mobile/camera-navegador.md) · [App SacraLink Camera](docs/mobile/README.md) |
 | APIs e protocolo | [APIs](docs/api/README.md) · [Protocolo de controle](packages/contracts/control-v1.md) |
 | Testes e capacidade | [Testes](docs/testing.md) · [Desempenho](docs/performance.md) |
 | Desenvolver | [Ambiente de desenvolvimento](docs/development.md) · [Contribuir](CONTRIBUTING.md) |
@@ -98,12 +104,17 @@ e [ADRs](docs/architecture/adr/).
 
 - Windows 11 ou Windows 10 1809+ 64 bits (o Windows 10 está fora de suporte — o app avisa)
 - OBS Studio 28+ com o servidor WebSocket habilitado
-- Celulares Android 7+ ou iOS 15.5+ no mesmo Wi-Fi (ou alcançáveis pela internet)
+- Celulares no mesmo Wi-Fi: pelo navegador, Chrome atualizado (Android) ou
+  Safari do iOS 15.5+; pelo app, Android 7+ ou iOS 15.5+ (o app também
+  funciona pela internet)
 
 ## Limitações conhecidas
 
 - Acesso por 4G/5G é impossível atrás de CGNAT sem IPv6 — por projeto, não há relay.
 - A câmera para em segundo plano ou com a tela bloqueada (restrição de Android/iOS).
+- Câmera pelo navegador: aviso de certificado na primeira vez, sem 4G/5G
+  nesta versão e recursos (zoom, lanterna) conforme o navegador; ainda não
+  testada em celulares reais ([detalhes](docs/mobile/camera-navegador.md)).
 - Zoom óptico e lentes dependem do que cada aparelho expõe.
 - Suporte a 8 câmeras é meta de projeto, ainda não validada com aparelhos
   ([desempenho](docs/performance.md)).

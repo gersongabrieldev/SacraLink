@@ -44,7 +44,7 @@ export function Dashboard() {
       {cams.length === 0 ? (
         <div className="card flex-1">
           <Empty icon={<Smartphone size={40} />} title="Nenhuma câmera pareada">
-            Instale o app <b>SacraLink Camera</b> no celular e clique em <b>Parear celular</b> para ler o QR Code.
+            Clique em <b>Parear celular</b> e aponte a câmera do celular para o QR Code: a câmera abre no navegador, sem instalar aplicativo.
           </Empty>
         </div>
       ) : (

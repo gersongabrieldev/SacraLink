@@ -11,6 +11,7 @@ import (
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/devices"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/ratelimit"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/store"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/webcam"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/whip"
 )
 
@@ -25,7 +26,11 @@ func (s *Server) DeviceHandler() http.Handler {
 	m := http.NewServeMux()
 	m.HandleFunc("GET /device/v1/info", s.deviceInfo)
 	m.HandleFunc("POST /device/v1/pair", s.devicePair)
-	m.HandleFunc("GET /device/v1/ws", s.deviceAuth(s.deviceWS))
+	m.HandleFunc("GET /device/v1/ws", s.deviceAuthWS(s.deviceWS))
+	m.HandleFunc("POST /device/v1/ws-ticket", s.deviceAuth(s.deviceWSTicket))
+	// Câmera pelo navegador (página servida pelo próprio computador da igreja).
+	m.Handle("GET /cam/", webcam.Handler())
+	m.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) { http.Redirect(w, r, "/cam/", http.StatusFound) })
 	m.HandleFunc("POST /device/v1/whip", s.deviceAuth(s.whipOffer))
 	m.HandleFunc("PATCH /device/v1/whip/sessions/{sid}", s.deviceAuth(s.whipPatch))
 	m.HandleFunc("DELETE /device/v1/whip/sessions/{sid}", s.deviceAuth(s.whipDelete))
@@ -188,4 +193,49 @@ func (s *Server) reachability(w http.ResponseWriter, r *http.Request) {
 	}
 	s.d.System.RecordReachability(clientIP(r), in.Network)
 	writeJSON(w, http.StatusOK, map[string]any{"ok": true, "seenIp": clientIP(r)})
+}
+
+// deviceWSTicket emite um ticket de uso único para o WebSocket do navegador.
+func (s *Server) deviceWSTicket(w http.ResponseWriter, r *http.Request) {
+	a := deviceFrom(r.Context())
+	writeJSON(w, http.StatusOK, map[string]any{"ticket": s.devTickets.issue(a.device.ID), "expiresInSec": int(TicketTTL.Seconds())})
+}
+
+// deviceAuthWS aceita o cabeçalho Authorization (app nativo) ou um ticket de
+// uso único na URL (navegador).
+func (s *Server) deviceAuthWS(next http.HandlerFunc) http.HandlerFunc {
+	withHeader := s.deviceAuth(next)
+	return func(w http.ResponseWriter, r *http.Request) {
+		t := r.URL.Query().Get("ticket")
+		if t == "" {
+			withHeader(w, r)
+			return
+		}
+		ip := clientIP(r)
+		deviceID, ok := s.devTickets.use(t)
+		if !ok {
+			deviceLimiter.Fail(ip)
+			writeError(w, &Error{http.StatusUnauthorized, "unauthorized", "ticket inválido ou expirado"})
+			return
+		}
+		d, err := s.d.Store.GetDevice(r.Context(), deviceID)
+		if err != nil {
+			writeError(w, devices.ErrUnauthorized)
+			return
+		}
+		switch d.Status {
+		case store.DeviceRevoked:
+			writeError(w, devices.ErrRevoked)
+			return
+		case store.DeviceBlocked:
+			writeError(w, devices.ErrBlocked)
+			return
+		}
+		c, err := s.d.Store.GetCameraByDevice(r.Context(), d.ID)
+		if err != nil {
+			writeError(w, devices.ErrRevoked)
+			return
+		}
+		next(w, r.WithContext(context.WithValue(r.Context(), deviceCtxKey{}, deviceAuthInfo{d, c})))
+	}
 }

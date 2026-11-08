@@ -7,6 +7,12 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 ## [Não lançado]
 
 ### Adicionado
+- **Câmera pelo navegador** (`https://<ip>:7443/cam/`): o celular vira câmera
+  sem instalar aplicativo. O QR Code passa a ser um link `https://` com os
+  dados no fragmento; a página (JavaScript puro, CSP estrita) usa o mesmo
+  pareamento, canal de controle v1 (por ticket de uso único) e WHIP do app.
+  Teste ponta a ponta com Edge/Chrome reais em modo headless no CI
+  ([ADR-0006](docs/architecture/adr/0006-camera-pelo-navegador.md)).
 - Plano técnico, ADRs e estrutura do monorepo (Fase 0).
 - Servidor `sacralink-server.exe`: SQLite com migrations, pareamento por QR
   com token de uso único, TLS 1.3 com pinning, Admin API (loopback) e Device

@@ -34,8 +34,16 @@ func TestQRNaoContemSegredosReutilizaveis(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	q := u.Query()
-	if u.Scheme != "sacralink" || q.Get("t") != p.Token || q.Get("fp") == "" || q.Get("h") != "192.168.0.10" || q.Get("n") != "Paróquia São José" {
+	// Link que abre a câmera no navegador; os dados ficam no fragmento, que
+	// o navegador nunca envia ao servidor nem a proxies.
+	if u.Scheme != "https" || u.Host != "192.168.0.10:7443" || u.Path != "/cam/" || u.RawQuery != "" {
+		t.Fatalf("link inesperado: %s", p.URI)
+	}
+	q, err := PairingParams(p.URI)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q.Get("t") != p.Token || q.Get("fp") == "" || q.Get("h") != "192.168.0.10" || q.Get("n") != "Paróquia São José" {
 		t.Fatalf("URI inesperada: %s", p.URI)
 	}
 	for k := range q {
@@ -114,5 +122,37 @@ func TestParseBearer(t *testing.T) {
 	id, sec, ok := ParseBearer("Bearer dabcdefgh." + strings.Repeat("s", 43))
 	if !ok || id != "dabcdefgh" || len(sec) != 43 {
 		t.Fatal("bearer válido rejeitado")
+	}
+}
+
+func TestPairingParamsFormatos(t *testing.T) {
+	e := Endpoints{ServerID: "srv1", ServerName: "Igreja A&B = São José #1", LANHosts: []string{"fe80::1", "192.168.0.10"},
+		Port: 7443, ExternalHost: "igreja.ddns.net", ExternalPort: 8443, FingerprintHex: strings.Repeat("cd", 32)}
+	uri := PairingURI(e, "tok_abcdefghijklmnopqrstuvwxyz", 1_800_000_000_000)
+	if !strings.HasPrefix(uri, "https://[fe80::1]:7443/cam/#") {
+		t.Fatalf("link inesperado: %s", uri)
+	}
+	q, err := PairingParams(uri)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q.Get("n") != e.ServerName || q.Get("h") != "fe80::1,192.168.0.10" || q.Get("x") != "igreja.ddns.net:8443" || q.Get("exp") != "1800000000" {
+		t.Fatalf("parâmetros: %v", q)
+	}
+
+	// Sem IP local: o link usa o endereço externo.
+	e.LANHosts = nil
+	if uri := PairingURI(e, "tok_abcdefghijklmnopqrstuvwxyz", 0); !strings.HasPrefix(uri, "https://igreja.ddns.net:8443/cam/#") {
+		t.Fatalf("link externo: %s", uri)
+	}
+
+	// Formato anterior continua aceito; links quaisquer não.
+	if _, err := PairingParams("sacralink://pair?v=1&t=abc&fp=ab"); err != nil {
+		t.Fatal(err)
+	}
+	for _, bad := range []string{"https://exemplo.com/", "https://192.168.0.10:7443/cam/", "https://192.168.0.10:7443/outra/#v=1&t=x", "sacralink://pair?v=2&t=x", "ftp://pair?v=1&t=x"} {
+		if _, err := PairingParams(bad); err == nil {
+			t.Fatalf("aceitou %q", bad)
+		}
 	}
 }

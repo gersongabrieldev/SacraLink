@@ -85,7 +85,7 @@ class _HomeScreenState extends State<HomeScreen> {
         content: TextField(
           controller: ctrl,
           maxLines: 4,
-          decoration: const InputDecoration(hintText: 'Cole o código sacralink://pair?… exibido no painel'),
+          decoration: const InputDecoration(hintText: 'Cole o link https://…/cam/#… exibido no painel'),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),

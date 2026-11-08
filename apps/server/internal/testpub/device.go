@@ -4,11 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -18,6 +16,7 @@ import (
 	"github.com/pion/webrtc/v4/pkg/media"
 
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/control"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/devices"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/tlsutil"
 )
 
@@ -40,11 +39,10 @@ func (c Credentials) client() *http.Client {
 // Pair lê o URI do QR Code e pareia o aparelho simulado. hostOverride
 // permite forçar o endereço (ex.: 127.0.0.1 em testes).
 func Pair(ctx context.Context, uri, name, hostOverride string) (*Credentials, error) {
-	u, err := url.Parse(uri)
-	if err != nil || u.Scheme != "sacralink" {
-		return nil, errors.New("URI de pareamento inválido")
+	q, err := devices.PairingParams(uri)
+	if err != nil {
+		return nil, err
 	}
-	q := u.Query()
 	host := strings.Split(q.Get("h"), ",")[0]
 	if hostOverride != "" {
 		host = hostOverride

@@ -5,7 +5,7 @@ O servidor expõe **duas APIs separadas** (especificação §17):
 | API | Endereço | Quem usa | Autenticação |
 |---|---|---|---|
 | Administração | `http://127.0.0.1:7380` (somente loopback) | Painel, ferramentas locais | Senha do administrador → token de sessão |
-| Dispositivos | `https://<ip>:7443` (TLS 1.3) | App SacraLink Camera | Token de pareamento → credencial do aparelho |
+| Dispositivos | `https://<ip>:7443` (TLS 1.3) | Câmera pelo navegador (`/cam/`) e app SacraLink Camera | Token de pareamento → credencial do aparelho |
 
 O protocolo de controle em tempo real está em
 [`packages/contracts/control-v1.md`](../../packages/contracts/control-v1.md).
@@ -95,7 +95,9 @@ Proteções: escuta só em 127.0.0.1; `Host` obrigatório `127.0.0.1:7380`/
 |---|---|
 | `GET /info` | Identificação do servidor (sem dados sensíveis) |
 | `POST /pair {token, device}` | → `{deviceId, secret, cameraId, cameraName, slot, serverId, serverName}` (o segredo só é mostrado aqui) |
-| `GET /ws` | Canal de controle (ver contrato) |
+| `GET /ws` | Canal de controle (ver contrato). Autenticação pelo cabeçalho `Authorization` (app) ou `?ticket=` (navegador) |
+| `POST /ws-ticket` | → `{ticket, expiresInSec}`: ticket de **uso único (30 s)** para o WebSocket do navegador, que não envia cabeçalhos |
+| `GET /cam/` (fora de `/device/v1`) | Câmera pelo navegador: página estática com CSP estrita; `GET /` redireciona para cá |
 | `POST /whip` (`application/sdp`) | Oferta WHIP → `201` + SDP de resposta + `Location` |
 | `PATCH /whip/sessions/{id}` | Trickle ICE / ICE restart |
 | `DELETE /whip/sessions/{id}` | Encerrar transmissão |
