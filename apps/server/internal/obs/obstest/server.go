@@ -152,12 +152,19 @@ func (s *Server) handle(w http.ResponseWriter, r *http.Request) {
 		c.Close(obs.CloseAuthenticationFailed, "Authentication failed.")
 		return
 	}
-	if s.write(ctx, c, obs.OpIdentified, map[string]any{"negotiatedRpcVersion": 1}) != nil {
+	// Identified e inscrição nos eventos de forma atômica (os eventos são
+	// emitidos com s.mu travado): nenhum evento chega antes do Identified e
+	// nenhum evento disparado logo após a conexão se perde. Antes, a inscrição
+	// vinha depois e um evento imediato sumia (teste intermitente no CI).
+	s.mu.Lock()
+	err = s.write(ctx, c, obs.OpIdentified, map[string]any{"negotiatedRpcVersion": 1})
+	if err == nil {
+		s.conns[c] = true
+	}
+	s.mu.Unlock()
+	if err != nil {
 		return
 	}
-	s.mu.Lock()
-	s.conns[c] = true
-	s.mu.Unlock()
 	defer func() {
 		s.mu.Lock()
 		delete(s.conns, c)

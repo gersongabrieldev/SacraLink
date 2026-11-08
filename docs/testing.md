@@ -60,6 +60,7 @@ Capturas de tela opcionais: `SACRALINK_BROWSER_SHOTS=<pasta>`.
 - Condição de corrida ao seguir renomeações feitas no OBS (detectada pelo `-race`).
 - MediaMTX não iniciava quando o SO recusava o buffer UDP de 8 MB (Linux); o supervisor agora volta ao padrão do sistema.
 - Conflitos de dependências do app (`battery_plus` × `wakelock_plus`; `permission_handler` exigindo API 37).
+- OBS simulado inscrevia a conexão nos eventos só depois do `Identified`: um evento disparado logo após conectar se perdia (falha intermitente no Linux). Agora as duas coisas são atômicas, como no OBS real.
 
 ### Validação manual já feita (sem aparelhos)
 
