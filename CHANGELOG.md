@@ -6,6 +6,8 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 
 ## [Não lançado]
 
+## [0.2.0] - 2026-11-21
+
 ### Adicionado
 - **Encerramento limpo ao atualizar ou desinstalar**: o instalador e o
   desinstalador pedem ao servidor que encerre do jeito normal (MediaMTX, OBS,
@@ -93,5 +95,6 @@ digital e MVP ainda sem validação com o OBS Studio real e com celulares reais
 - Documentação: APIs, protocolo, instalação, OBS, acesso externo, app,
   testes, desempenho, assinatura de código.
 
-[Não lançado]: https://github.com/gersongabrieldev/SacraLink/compare/v0.1.0...HEAD
+[Não lançado]: https://github.com/gersongabrieldev/SacraLink/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/gersongabrieldev/SacraLink/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/gersongabrieldev/SacraLink/releases/tag/v0.1.0
