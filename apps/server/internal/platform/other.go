@@ -77,6 +77,14 @@ func AutostartEnabled() bool { return false }
 // SingleInstance sempre permite (sem mutex nomeado).
 func SingleInstance(string) (func(), bool, error) { return func() {}, true, nil }
 
+// QuitRequests devolve um canal que nunca fecha (sem eventos nomeados).
+func QuitRequests(string) (<-chan struct{}, func(), error) {
+	return make(chan struct{}), func() {}, nil
+}
+
+// RequestQuit não é suportado fora do Windows.
+func RequestQuit(string, time.Duration) error { return errors.ErrUnsupported }
+
 // DetectOBS não é suportado fora do Windows.
 func DetectOBS() OBSInstall { return OBSInstall{} }
 

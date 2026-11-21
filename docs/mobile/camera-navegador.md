@@ -84,6 +84,30 @@ pareado. Dica: use *Adicionar à tela inicial* do navegador para ter um atalho.
 - Recarregar a página durante a transmissão retoma a transmissão.
 - Parar uma câmera que está **NO AR** pede confirmação.
 
+## Celular no cabo (recomendado para a câmera principal)
+
+Para a câmera que mais fica no ar (altar, ambão), o mais estável é tirar o
+celular do Wi-Fi e ligá-lo **na rede com fio**, com um adaptador USB → Ethernet.
+O celular entra na mesma rede do computador, então a câmera pelo navegador
+funciona igual, sem instalar nada e sem modo desenvolvedor.
+
+- **Prefira um adaptador com carregamento** (hub USB-C com porta de rede e
+  entrada de energia PD): o celular fica carregando durante toda a celebração.
+- **Android com USB-C:** a maioria dos aparelhos reconhece adaptadores USB
+  Ethernet comuns (chips Realtek RTL8153 ou ASIX AX88179).
+- **iPhone com USB-C (iPhone 15 em diante):** reconhece adaptadores USB
+  Ethernet direto.
+- **iPhone com Lightning:** use o adaptador "Lightning para USB 3 para Câmera"
+  da Apple (tem entrada de energia) com um adaptador USB Ethernet.
+- **Desligue o Wi-Fi do celular** depois de ligar o cabo, para o vídeo não
+  continuar pelo Wi-Fi.
+- O cabo de rede vai até o roteador ou a um switch na mesma rede do
+  computador (não precisa ir até o computador).
+
+Com o cabo, o celular libera o Wi-Fi para as outras câmeras e fica imune a
+interferência. *Situação: recomendação baseada no suporte dos sistemas a
+adaptadores Ethernet; ainda não testado com o SacraLink em aparelhos reais.*
+
 ## O que funciona no navegador
 
 | Recurso | Chrome (Android) | Safari (iPhone) | App nativo |

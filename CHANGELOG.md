@@ -6,6 +6,17 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 
 ## [Não lançado]
 
+### Adicionado
+- **Encerramento limpo ao atualizar ou desinstalar**: o instalador e o
+  desinstalador pedem ao servidor que encerre do jeito normal (MediaMTX, OBS,
+  banco e logs fechados corretamente) pelo evento `Local\SacraLinkServer.Quit`
+  e só forçam (`taskkill`) o que sobrar após 20 s. Novo comando
+  `sacralink-server quit [--timeout 20s]`. Vale a partir da próxima
+  atualização (a 0.1.0 em execução ainda é encerrada à força).
+- Documentação: **celular no cabo** com adaptador USB → Ethernet para a câmera
+  principal, sem instalar nada nem ativar o modo desenvolvedor.
+- CI compila o instalador (Inno Setup) a cada envio, não só na release.
+
 ### Corrigido
 - **Comandos de terminal sem resposta**: `sacralink-server admin reset
   --confirm` (recuperação de senha), `version` e `firewall` não mostravam

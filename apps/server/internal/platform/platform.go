@@ -5,8 +5,20 @@
 package platform
 
 import (
+	"errors"
 	"fmt"
 	"os/exec"
+)
+
+// quitSuffix compõe o nome do evento de encerramento ("Local\<instância>.Quit").
+const quitSuffix = ".Quit"
+
+var (
+	// ErrNotRunning: nenhuma instância em execução (RequestQuit).
+	ErrNotRunning = errors.New("o SacraLink não está em execução")
+	// ErrQuitUnsupported: a instância em execução é de uma versão sem o
+	// pedido de encerramento (anterior à 0.2.0).
+	ErrQuitUnsupported = errors.New("a versão em execução não aceita o pedido de encerramento; use \"Sair do SacraLink\" na bandeja")
 )
 
 // OSInfo descreve o sistema operacional em execução.

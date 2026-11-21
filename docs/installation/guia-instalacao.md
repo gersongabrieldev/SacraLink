@@ -34,6 +34,10 @@ instalar aplicativo. Na primeira vez, aceite o aviso de certificado (é o
 certificado deste computador). Passo a passo e limitações:
 [câmera pelo navegador](../mobile/camera-navegador.md).
 
+Para a câmera principal, considere ligar o celular **no cabo de rede** com um
+adaptador USB → Ethernet: fica mais estável que o Wi-Fi
+([como fazer](../mobile/camera-navegador.md#celular-no-cabo-recomendado-para-a-câmera-principal)).
+
 **Reserve o IP deste computador no roteador** (reserva DHCP): os celulares
 conectados pelo navegador guardam o endereço e precisariam ser pareados de
 novo se ele mudar.

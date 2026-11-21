@@ -6,6 +6,7 @@
 //	sacralink-server [--background] [--open] [--no-tray] [--dev] [--log-level info]
 //	sacralink-server firewall apply|remove [opções]   (executado com elevação UAC)
 //	sacralink-server admin reset --confirm            (recupera o acesso ao painel)
+//	sacralink-server quit [--timeout 20s]             (encerra a instância em execução)
 //	sacralink-server version
 //
 // No Windows, os comandos de terminal devem ser chamados sem a extensão
@@ -15,6 +16,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -37,7 +39,7 @@ import (
 func main() {
 	if len(os.Args) > 1 {
 		switch os.Args[1] {
-		case "firewall", "admin", "version", "--version":
+		case "firewall", "admin", "quit", "version", "--version":
 			attachParentConsole()
 		}
 		switch os.Args[1] {
@@ -45,6 +47,8 @@ func main() {
 			os.Exit(firewallCmd(os.Args[2:]))
 		case "admin":
 			os.Exit(adminCmd(os.Args[2:]))
+		case "quit":
+			os.Exit(quitCmd(os.Args[2:]))
 		case "version", "--version":
 			b := buildinfo.Get()
 			fmt.Printf("sacralink-server %s (%s, %s, %s)\n", b.Version, b.Commit, b.Date, b.GoVersion)
@@ -87,7 +91,7 @@ func serve() int {
 	defer closer.Close()
 	slog.SetDefault(log)
 
-	release, ok, err := platform.SingleInstance("SacraLinkServer")
+	release, ok, err := platform.SingleInstance(instanceName)
 	if err != nil {
 		log.Error("falha ao verificar instância única", "erro", err)
 	}
@@ -99,6 +103,14 @@ func serve() int {
 		return 0
 	}
 	defer release()
+	// Pedido de encerramento do instalador/desinstalador ou de "quit". Liberado
+	// antes do mutex (defer em ordem inversa).
+	quitRequested, releaseQuit, err := platform.QuitRequests(instanceName)
+	if err != nil {
+		log.Warn("pedido de encerramento externo indisponível", "erro", err)
+	} else {
+		defer releaseQuit()
+	}
 
 	osInfo := platform.OS()
 	log.Info("iniciando SacraLink", "versao", buildinfo.Version, "windows", osInfo.Name, "build", osInfo.Build, "smart_app_control", osInfo.SmartAppCtrl)
@@ -115,6 +127,14 @@ func serve() int {
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer stop()
+	go func() {
+		select {
+		case <-quitRequested: // nil se o evento não pôde ser criado: espera só o ctx
+			log.Info("encerramento pedido pelo instalador ou pelo comando quit")
+			stop()
+		case <-ctx.Done():
+		}
+	}()
 	a, err := app.New(ctx, cfg)
 	if err != nil {
 		log.Error("falha ao iniciar", "erro", err)
@@ -254,6 +274,30 @@ func firewallCmd(args []string) int {
 		fmt.Fprintln(os.Stderr, "ação desconhecida:", args[0])
 		return 2
 	}
+	return 0
+}
+
+// instanceName identifica a instância única (mutex "Local\SacraLinkServer" e
+// evento "Local\SacraLinkServer.Quit", também usados pelo instalador).
+const instanceName = "SacraLinkServer"
+
+// quitCmd: "quit [--timeout 20s]" pede à instância em execução que encerre do
+// jeito normal (como "Sair do SacraLink" na bandeja, sem a pergunta) e espera.
+func quitCmd(args []string) int {
+	fs := flag.NewFlagSet("quit", flag.ContinueOnError)
+	timeout := fs.Duration("timeout", 20*time.Second, "tempo máximo de espera")
+	if err := fs.Parse(args); err != nil {
+		return 2
+	}
+	switch err := platform.RequestQuit(instanceName, *timeout); {
+	case errors.Is(err, platform.ErrNotRunning):
+		fmt.Println("O SacraLink não está em execução.")
+		return 0
+	case err != nil:
+		fmt.Fprintln(os.Stderr, err)
+		return 1
+	}
+	fmt.Println("SacraLink encerrado.")
 	return 0
 }
 

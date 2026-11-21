@@ -2,6 +2,8 @@ package platform
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	"os"
 	"os/exec"
 	"runtime"
@@ -87,6 +89,70 @@ func TestSingleInstance(t *testing.T) {
 		if err != nil || ok2 {
 			t.Fatalf("segunda instância deveria falhar: %v %v", ok2, err)
 		}
+	}
+}
+
+func TestRequestQuit(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("eventos nomeados só no Windows")
+	}
+	name := fmt.Sprintf("SacraLinkQuitTest-%d", os.Getpid())
+	if err := RequestQuit(name, time.Second); !errors.Is(err, ErrNotRunning) {
+		t.Fatalf("sem instância: %v", err)
+	}
+	rel, ok, err := SingleInstance(name)
+	if err != nil || !ok {
+		t.Fatalf("instância: %v %v", ok, err)
+	}
+	// Instância de versão antiga: mutex sem o evento de encerramento.
+	if err := RequestQuit(name, time.Second); !errors.Is(err, ErrQuitUnsupported) {
+		rel()
+		t.Fatalf("sem evento: %v", err)
+	}
+	requested, releaseQuit, err := QuitRequests(name)
+	if err != nil {
+		rel()
+		t.Fatal(err)
+	}
+	// A "instância" encerra ao receber o pedido: libera o evento e o mutex.
+	go func() {
+		<-requested
+		releaseQuit()
+		rel()
+	}()
+	if err := RequestQuit(name, 5*time.Second); err != nil {
+		t.Fatalf("pedido de encerramento: %v", err)
+	}
+	// Nova instância com o mesmo nome não herda o pedido anterior.
+	rel2, _, _ := SingleInstance(name)
+	defer rel2()
+	again, release2, err := QuitRequests(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer release2()
+	select {
+	case <-again:
+		t.Fatal("pedido antigo não deveria valer para a nova instância")
+	case <-time.After(300 * time.Millisecond):
+	}
+}
+
+func TestRequestQuitTimeout(t *testing.T) {
+	if runtime.GOOS != "windows" {
+		t.Skip("eventos nomeados só no Windows")
+	}
+	name := fmt.Sprintf("SacraLinkQuitTimeout-%d", os.Getpid())
+	rel, _, _ := SingleInstance(name)
+	defer rel()
+	_, releaseQuit, err := QuitRequests(name)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer releaseQuit()
+	// A instância recebe o pedido mas não encerra: RequestQuit desiste no prazo.
+	if err := RequestQuit(name, 500*time.Millisecond); err == nil || errors.Is(err, ErrNotRunning) {
+		t.Fatalf("esperava erro de prazo, veio %v", err)
 	}
 }
 

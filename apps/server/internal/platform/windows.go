@@ -207,6 +207,90 @@ func SingleInstance(name string) (release func(), ok bool, err error) {
 	return func() { windows.CloseHandle(h) }, true, nil
 }
 
+// instanceRunning informa se o mutex de SingleInstance existe.
+func instanceRunning(name string) bool {
+	p, err := windows.UTF16PtrFromString(`Local\` + name)
+	if err != nil {
+		return false
+	}
+	h, err := windows.OpenMutex(windows.SYNCHRONIZE, false, p)
+	if err != nil {
+		return errors.Is(err, windows.ERROR_ACCESS_DENIED) // existe, mas é de outro usuário
+	}
+	windows.CloseHandle(h)
+	return true
+}
+
+// QuitRequests cria o evento nomeado "Local\<name>.Quit", pelo qual o
+// instalador, o desinstalador e "sacralink-server quit" pedem à instância em
+// execução que encerre do jeito normal (sem taskkill). O canal fecha quando o
+// pedido chega; release libera o evento (chamar antes de liberar o mutex da
+// instância). O instalador (installer/windows/SacraLink.iss) usa o mesmo nome.
+func QuitRequests(name string) (requested <-chan struct{}, release func(), err error) {
+	p, err := windows.UTF16PtrFromString(`Local\` + name + quitSuffix)
+	if err != nil {
+		return nil, nil, err
+	}
+	quit, err := windows.CreateEvent(nil, 1, 0, p)
+	if quit == 0 || (err != nil && !errors.Is(err, windows.ERROR_ALREADY_EXISTS)) {
+		return nil, nil, fmt.Errorf("evento de encerramento: %w", err)
+	}
+	_ = windows.ResetEvent(quit) // um pedido antigo não vale para esta instância
+	stop, err := windows.CreateEvent(nil, 1, 0, nil)
+	if err != nil {
+		windows.CloseHandle(quit)
+		return nil, nil, fmt.Errorf("evento de encerramento: %w", err)
+	}
+	ch, done := make(chan struct{}), make(chan struct{})
+	go func() {
+		defer close(done)
+		ev, err := windows.WaitForMultipleObjects([]windows.Handle{quit, stop}, false, windows.INFINITE)
+		if err == nil && ev == windows.WAIT_OBJECT_0 {
+			close(ch)
+		}
+	}()
+	var once sync.Once
+	return ch, func() {
+		once.Do(func() {
+			_ = windows.SetEvent(stop)
+			<-done
+			windows.CloseHandle(stop)
+			windows.CloseHandle(quit)
+		})
+	}, nil
+}
+
+// RequestQuit pede à instância em execução que encerre e espera ela terminar.
+func RequestQuit(name string, timeout time.Duration) error {
+	if !instanceRunning(name) {
+		return ErrNotRunning
+	}
+	p, err := windows.UTF16PtrFromString(`Local\` + name + quitSuffix)
+	if err != nil {
+		return err
+	}
+	h, err := windows.OpenEvent(windows.EVENT_MODIFY_STATE, false, p)
+	switch {
+	case errors.Is(err, windows.ERROR_FILE_NOT_FOUND):
+		return ErrQuitUnsupported
+	case err != nil:
+		return fmt.Errorf("não foi possível pedir o encerramento: %w", err)
+	}
+	err = windows.SetEvent(h)
+	windows.CloseHandle(h)
+	if err != nil {
+		return fmt.Errorf("não foi possível pedir o encerramento: %w", err)
+	}
+	deadline := time.Now().Add(timeout)
+	for instanceRunning(name) {
+		if time.Now().After(deadline) {
+			return fmt.Errorf("o SacraLink não encerrou em %s", timeout)
+		}
+		time.Sleep(200 * time.Millisecond)
+	}
+	return nil
+}
+
 // ---------------------------------------------------------------------------
 // OBS Studio.
 

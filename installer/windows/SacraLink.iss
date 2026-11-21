@@ -134,20 +134,63 @@ begin
   Result := True;
 end;
 
-// Encerra o SacraLink em execução antes de atualizar (os dados do usuário em
-// %LOCALAPPDATA%\SacraLink são preservados).
-function PrepareToInstall(var NeedsRestart: Boolean): String;
+const
+  EVENT_MODIFY_STATE = $0002;
+
+function OpenEvent(dwDesiredAccess: DWORD; bInheritHandle: BOOL; lpName: String): THandle;
+  external 'OpenEventW@kernel32.dll stdcall';
+function SetEvent(hEvent: THandle): BOOL;
+  external 'SetEvent@kernel32.dll stdcall';
+function CloseHandle(hObject: THandle): BOOL;
+  external 'CloseHandle@kernel32.dll stdcall';
+
+// Pede ao servidor em execução que encerre do jeito normal (fecha o MediaMTX,
+// a conexão com o OBS, o banco e os logs), pelo mesmo evento usado por
+// "sacralink-server quit" (Local\SacraLinkServer.Quit), e espera até 20 s o
+// mutex da instância sumir. Versões anteriores à 0.2.0 não têm o evento: aí
+// sobra o taskkill de StopSacraLink.
+procedure RequestServerQuit();
+var
+  H: THandle;
+  I: Integer;
+begin
+  H := OpenEvent(EVENT_MODIFY_STATE, False, 'Local\SacraLinkServer.Quit');
+  if H = 0 then
+    Exit;
+  SetEvent(H);
+  CloseHandle(H);
+  for I := 1 to 100 do
+  begin
+    if not CheckForMutexes('Local\SacraLinkServer') then
+      Break;
+    Sleep(200);
+  end;
+end;
+
+// Encerra o SacraLink: primeiro o pedido normal, depois força o que restar.
+procedure StopSacraLink();
 var
   Code: Integer;
 begin
+  RequestServerQuit();
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM SacraLink.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM sacralink-server.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
   Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /IM mediamtx.exe', '', SW_HIDE, ewWaitUntilTerminated, Code);
+end;
+
+// Encerra o SacraLink em execução antes de atualizar (os dados do usuário em
+// %LOCALAPPDATA%\SacraLink são preservados).
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  StopSacraLink();
   Result := '';
 end;
 
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
+  // Antes do [UninstallRun] (que só força o que ainda estiver aberto).
+  if CurUninstallStep = usUninstall then
+    RequestServerQuit();
   if (CurUninstallStep = usPostUninstall) and not UninstallSilent then
     if MsgBox(CustomMessage('RemoveData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2) = IDYES then
       DelTree(ExpandConstant('{localappdata}\SacraLink'), True, True, True);
