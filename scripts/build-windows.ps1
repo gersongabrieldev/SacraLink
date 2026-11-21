@@ -22,6 +22,11 @@ param(
     [switch]$MediaMTXFromSource
 )
 $ErrorActionPreference = "Stop"
+# No GitHub Actions o erro vira anotação do job (visível sem login).
+trap {
+    if ($env:GITHUB_ACTIONS -eq "true") { Write-Host "::error title=Build::$($_.Exception.Message -replace "`r?`n", ' | ')" }
+    break
+}
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $out = Join-Path $root "dist-release\SacraLink"
 $commit = (git -C $root rev-parse --short HEAD 2>$null); if (-not $commit) { $commit = "unknown" }
