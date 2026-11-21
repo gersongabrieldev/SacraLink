@@ -72,3 +72,7 @@ apps/mobile/ios/
 apps/mobile/.metadata
 apps/mobile/pubspec.lock
 apps/mobile/packages/sacralink_device_caps/android/.gradle/
+
+# Pastas temporárias das rodadas de assinatura (scripts/build-installer.ps1)
+/signing/
+/signing-test/

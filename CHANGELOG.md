@@ -6,6 +6,21 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 
 ## [Não lançado]
 
+### Adicionado
+- **Assinatura de código pronta para a SignPath Foundation**: o workflow de
+  release assina, em três rodadas aprovadas pelo mantenedor, os executáveis
+  (painel, servidor, `.com` e MediaMTX), as partes internas do instalador
+  (programa temporário e desinstalador, que o Smart App Control bloqueou na
+  v0.2.0) e o instalador final. Fica ativa quando o repositório tiver as
+  credenciais da SignPath; até lá, as releases saem sem assinatura. O CI
+  testa o fluxo completo a cada envio com um certificado descartável.
+- Política de assinatura de código ([CODE_SIGNING_POLICY.md](CODE_SIGNING_POLICY.md)).
+
+### Alterado
+- O `mediamtx.exe` do instalador passa a ser compilado do código-fonte
+  oficial (v1.21.3, commit fixado), com a receita do próprio projeto, para
+  poder ser assinado junto com o SacraLink.
+
 ## [0.2.0] - 2026-11-21
 
 ### Adicionado

@@ -17,8 +17,9 @@
   `sacralink-server.com` (comandos de terminal);
 - `mediamtx.exe`: componente de terceiros
   ([MediaMTX](https://github.com/bluenviron/mediamtx), licença MIT). Para ser
-  assinado junto com o restante, passa a ser compilado a partir do
-  código-fonte oficial, na versão fixada, pelo próprio CI.
+  assinado junto com o restante, é compilado a partir do código-fonte
+  oficial, na versão e no commit fixados, pelo próprio CI
+  ([`build-mediamtx.ps1`](scripts/build-mediamtx.ps1)).
 
 Só são assinados binários compilados pelo **GitHub Actions** a partir deste
 repositório público, numa tag `vX.Y.Z` da branch `main`. Compilações locais

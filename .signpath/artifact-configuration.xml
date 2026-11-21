@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Configuração de artefato do projeto SacraLink na SignPath (copiar para
+  "Artifact configurations" no painel da SignPath e marcar como padrão).
+
+  O release.yml envia três pastas, cada uma como artefato ZIP do GitHub
+  Actions (actions/upload-artifact):
+    1. executáveis: SacraLink.exe, sacralink-server.exe, sacralink-server.com
+       e mediamtx.exe;
+    2. arquivos internos do instalador (programa temporário e desinstalador),
+       com o nome <sha256>.exe;
+    3. o instalador final SacraLink-Setup-x64.exe.
+  Todos são PE (o .com também) e recebem assinatura Authenticode.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <zip-file>
+    <pe-file path="*.exe" min-matches="0" max-matches="unbounded">
+      <authenticode-sign />
+    </pe-file>
+    <pe-file path="*.com" min-matches="0" max-matches="unbounded">
+      <authenticode-sign />
+    </pe-file>
+  </zip-file>
+</artifact-configuration>

@@ -7,7 +7,8 @@
   2. Compila o painel (React/Vite) — Node.js necessário só no build.
   3. Gera os recursos Windows (.syso: ícone, manifesto DPI, versão).
   4. Compila SacraLink.exe (Wails v2) e sacralink-server.exe (Go, sem CGO).
-  5. Copia o MediaMTX (versão fixada) com o arquivo .sha256 de integridade.
+  5. Copia o MediaMTX (versão fixada; com -MediaMTXFromSource, compilado do
+     código-fonte) com o arquivo .sha256 de integridade.
   Saída: dist-release\SacraLink\ (pronta para o instalador Inno Setup).
 
 .EXAMPLE
@@ -15,7 +16,10 @@
 #>
 param(
     [string]$Version = "0.0.0-dev",
-    [switch]$SkipFrontend
+    [switch]$SkipFrontend,
+    # Compila o MediaMTX do código-fonte (CI e releases: o binário precisa ser
+    # assinado junto); sem a opção, usa o binário oficial baixado.
+    [switch]$MediaMTXFromSource
 )
 $ErrorActionPreference = "Stop"
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
@@ -67,8 +71,14 @@ Step "Painel para navegador (servido pelo servidor)"
 Copy-Item -Recurse (Join-Path $root "apps\desktop\frontend\dist") (Join-Path $out "dashboard")
 
 Step "MediaMTX"
-$mtx = Join-Path $root "third_party\bin\mediamtx"
-if (-not (Test-Path (Join-Path $mtx "mediamtx.exe"))) { & (Join-Path $root "scripts\fetch-mediamtx.ps1") }
+if ($MediaMTXFromSource) {
+    # Compilado do código-fonte (versão e commit fixados) para poder ser assinado.
+    $mtx = Join-Path $root "third_party\bin\mediamtx-source"
+    & (Join-Path $root "scripts\build-mediamtx.ps1") -Destination $mtx
+} else {
+    $mtx = Join-Path $root "third_party\bin\mediamtx"
+    if (-not (Test-Path (Join-Path $mtx "mediamtx.exe"))) { & (Join-Path $root "scripts\fetch-mediamtx.ps1") }
+}
 Copy-Item (Join-Path $mtx "mediamtx.exe") $out
 Copy-Item (Join-Path $mtx "LICENSE") (Join-Path $out "mediamtx-LICENSE.txt")
 $hash = (Get-FileHash (Join-Path $out "mediamtx.exe") -Algorithm SHA256).Hash.ToLower()

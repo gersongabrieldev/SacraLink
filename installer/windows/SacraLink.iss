@@ -5,7 +5,10 @@
 ; Compilação (após scripts\build-windows.ps1):
 ;   iscc /DAppVersion=0.1.0 installer\windows\SacraLink.iss
 ;
-; Assinatura de código (recomendada; exige certificado do mantenedor):
+; Assinatura de código: scripts\build-installer.ps1 (SignPath no release.yml,
+; certificado descartável no teste do ci.yml). Com /DSign=1 e um SignTool, o
+; ISCC assina também o programa temporário que o Setup extrai e o
+; desinstalador; com certificado local, por exemplo:
 ;   iscc /DAppVersion=0.1.0 /DSign=1 "/Ssigntool=signtool sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /a $f" ...
 ; ============================================================================
 

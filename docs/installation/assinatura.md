@@ -50,12 +50,35 @@ reputação (relatos de desenvolvedores, não documentação oficial).
 
 ## Como o pipeline está preparado
 
-- `installer/windows/SacraLink.iss` aceita `/DSign=1` e um `SignTool`
-  definido na linha de comando do ISCC (`/Ssigntool=signtool sign /fd sha256
-  /tr http://timestamp.digicert.com /td sha256 /a $f`).
-- No GitHub Actions, adicione o certificado como segredo (ou use a ação do
-  Azure Trusted Signing) e assine os `.exe` em `dist-release/SacraLink` antes
-  de compilar o instalador.
+- **MediaMTX do código-fonte:** `scripts/build-mediamtx.ps1` compila a versão
+  fixada (tag conferida contra o commit) com a receita oficial do projeto;
+  `build-windows.ps1 -MediaMTXFromSource` usa esse binário no CI e nas
+  releases, para que ele possa ser assinado.
+- **Três rodadas de assinatura** (`scripts/build-installer.ps1` e
+  `.github/workflows/release.yml`):
+  1. executáveis: `SacraLink.exe`, `sacralink-server.exe`,
+     `sacralink-server.com` e `mediamtx.exe` (o `mediamtx.exe.sha256` é
+     refeito depois, porque a assinatura muda o hash);
+  2. partes internas do instalador: o Inno Setup só assina o programa
+     temporário e o desinstalador durante a compilação, chamando o SignTool.
+     O SignTool do SacraLink (`scripts/signing/inno-signtool.ps1`) separa
+     esses arquivos numa primeira compilação; depois de assinados, uma segunda
+     compilação idêntica usa as cópias assinadas (conferidas pelo SHA-256; se
+     a compilação não for idêntica, o build falha em vez de publicar partes
+     sem assinatura);
+  3. o instalador final.
+- **SignPath:** cada rodada envia uma pasta como artefato do GitHub Actions
+  para a ação `signpath/github-action-submit-signing-request@v3`; o
+  mantenedor aprova o pedido no painel da SignPath. A configuração de
+  artefato fica em `.signpath/artifact-configuration.xml`. Fica ativa quando
+  o repositório tem a variável `SIGNPATH_ORGANIZATION_ID` e o segredo
+  `SIGNPATH_API_TOKEN`; sem eles, a release sai sem assinatura. A conferência
+  final exige assinatura confiável no Windows em todos os executáveis.
+- **Teste a cada envio:** o `ci.yml` roda as três rodadas com um certificado
+  descartável (`scripts/signing/sign-test.ps1`), para que o fluxo já esteja
+  validado quando a SignPath for configurada.
+- Com um certificado próprio instalado na máquina, também é possível:
+  `iscc /DSign=1 "/Ssigntool=signtool sign /fd sha256 /tr http://timestamp.digicert.com /td sha256 /a $f" ...`.
 
 Sem certificado, o instalador funciona em máquinas sem Smart App Control,
 mas o usuário verá alertas do SmartScreen.

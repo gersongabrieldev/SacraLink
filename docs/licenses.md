@@ -7,7 +7,7 @@ distribuído sob a licença MIT; todas as dependências abaixo são compatíveis
 
 | Componente | Uso | Licença | Redistribuído? |
 |---|---|---|---|
-| MediaMTX v1.21.3 | Servidor de mídia | MIT | Sim (`mediamtx.exe` + `mediamtx-LICENSE.txt`, SHA-256 verificado) |
+| MediaMTX v1.21.3 | Servidor de mídia | MIT | Sim (`mediamtx.exe` compilado do código-fonte oficial no commit `9540cb6`, + `mediamtx-LICENSE.txt`; integridade por SHA-256) |
 | Biblioteca padrão do Go | Servidor | BSD-3-Clause | Compilado |
 | modernc.org/sqlite (+ libc, mathutil, memory) | Banco SQLite sem CGO | BSD-3-Clause | Compilado |
 | golang.org/x/sys, x/crypto, x/time | APIs do Windows, bcrypt, rate limit | BSD-3-Clause | Compilado |
