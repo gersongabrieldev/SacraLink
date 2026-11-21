@@ -16,6 +16,14 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 - Documentação: **celular no cabo** com adaptador USB → Ethernet para a câmera
   principal, sem instalar nada nem ativar o modo desenvolvedor.
 - CI compila o instalador (Inno Setup) a cada envio, não só na release.
+- **Aviso de versão nova**: ao abrir o painel (e a cada 12 h no servidor), o
+  SacraLink consulta a lista pública de releases no GitHub e mostra no topo
+  *Nova versão do SacraLink* com **Baixar instalador** e **O que mudou**. Nada
+  é baixado ou instalado sem o operador clicar; só links do repositório
+  oficial são abertos. Quem está numa versão 0.x recebe pré-lançamentos; numa
+  versão estável, só versões estáveis. Pode ser desligado em
+  *Configurações* (`updateCheck`). Novos endpoints `GET /api/v1/update` e
+  `POST /api/v1/update/check`.
 
 ### Corrigido
 - **Comandos de terminal sem resposta**: `sacralink-server admin reset

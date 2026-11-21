@@ -69,7 +69,10 @@ type Settings struct {
 	MaxStreams       int    `json:"maxStreams"`
 	ICETCP           bool   `json:"iceTcp"`
 	// MDNS anuncia o servidor na rede local para celulares já pareados.
-	MDNS        bool     `json:"mdns"`
+	MDNS bool `json:"mdns"`
+	// UpdateCheck consulta as releases públicas no GitHub para avisar de
+	// versões novas (só leitura; nada é baixado ou instalado sozinho).
+	UpdateCheck bool     `json:"updateCheck"`
 	PreviewMode string   `json:"previewMode"`
 	Language    string   `json:"language"`
 	Theme       string   `json:"theme"`
@@ -82,7 +85,7 @@ type Settings struct {
 // Defaults retorna as configurações padrão.
 func Defaults() Settings {
 	return Settings{
-		ServerName: "SacraLink", MaxStreams: 8, ICETCP: true, MDNS: true, PreviewMode: PreviewAll,
+		ServerName: "SacraLink", MaxStreams: 8, ICETCP: true, MDNS: true, UpdateCheck: true, PreviewMode: PreviewAll,
 		Language: "pt-BR", Theme: "dark",
 		Fallback: Fallback{Mode: FallbackStay, GraceSec: 3},
 		Remote:   Remote{PublicPort: 7443},

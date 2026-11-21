@@ -61,6 +61,7 @@ Proteções: escuta só em 127.0.0.1; `Host` obrigatório `127.0.0.1:7380`/
 | `POST /system/selftest` | Teste de funcionamento (banco, mídia, TLS dos celulares, OBS, firewall, rede, Windows) — somente leitura |
 | `GET /system/firewall` · `POST /system/firewall {confirm}` | Regras do firewall (eleva via UAC) |
 | `POST /system/autostart {enabled}` | Início com o Windows |
+| `GET /update` · `POST /update/check` | Versão nova no GitHub: `{current, enabled, available, latest:{version, url, installerUrl, prerelease}, checkedAt, error}`. O servidor consulta ao iniciar e a cada 12 h; `check` força a consulta (no máximo 1 por minuto). Só links `https://github.com/` são repassados; nada é baixado sozinho. Desligado com `settings.updateCheck=false` e em builds `0.0.0-…` |
 | `GET /settings` · `PUT /settings` | Configurações |
 | `GET /network/status` · `POST /network/diagnose` | Diagnóstico de rede |
 | `GET /devices` | Aparelhos |

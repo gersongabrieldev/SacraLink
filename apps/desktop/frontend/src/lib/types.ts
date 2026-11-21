@@ -114,6 +114,7 @@ export interface Settings {
   maxStreams: number;
   iceTcp: boolean;
   mdns: boolean;
+  updateCheck: boolean;
   previewMode: 'all' | 'selected' | 'off';
   language: string;
   theme: 'dark' | 'light';
@@ -238,4 +239,23 @@ export interface Preset {
   name: string;
   params: { lensId?: string; zoom?: number; profileId?: string; torch?: boolean; micMuted?: boolean };
   createdAt: number;
+}
+
+/** Versão publicada no GitHub (GET /api/v1/update). */
+export interface ReleaseInfo {
+  version: string;
+  name: string;
+  url: string;
+  installerUrl?: string;
+  publishedAt: number;
+  prerelease: boolean;
+}
+
+export interface UpdateStatus {
+  current: string;
+  enabled: boolean;
+  available: boolean;
+  latest?: ReleaseInfo;
+  checkedAt?: number;
+  error?: string;
 }

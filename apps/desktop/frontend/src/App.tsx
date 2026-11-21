@@ -5,6 +5,7 @@ import { t } from './lib/i18n';
 import type { SystemStatus } from './lib/types';
 import { Header } from './components/Header';
 import { Toasts } from './components/ui';
+import { UpdateBanner } from './components/UpdateBanner';
 import { Login } from './pages/Login';
 import { Setup } from './pages/Setup';
 import { Dashboard } from './pages/Dashboard';
@@ -73,6 +74,7 @@ export function App() {
   return (
     <div className="flex h-full flex-col">
       <Header lanIp={lanIp} />
+      <UpdateBanner />
       <div className="flex min-h-0 flex-1">
         <nav className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-line bg-surface py-3 lg:w-52 lg:items-stretch lg:px-2" aria-label="Navegação">
           {nav.map(({ id, icon: Icon }) => (

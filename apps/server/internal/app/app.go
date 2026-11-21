@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/api"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/buildinfo"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/control"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/core"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/devices"
@@ -29,6 +30,7 @@ import (
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/settings"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/store"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/tlsutil"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/update"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/whip"
 )
 
@@ -80,7 +82,8 @@ type App struct {
 	report *netdiag.Report
 	reach  *netdiag.Reachability
 
-	mdns *discovery.Announcer
+	mdns    *discovery.Announcer
+	updates *update.Checker
 
 	mediaMu  sync.Mutex
 	mediaCfg media.Config
@@ -169,9 +172,11 @@ func (a *App) init(ctx context.Context) error {
 	a.core.SetOBS(a.bridge)
 	a.devices = devices.New(a.store, a.Endpoints)
 	a.mdns = discovery.New(a.log)
+	// Builds de desenvolvimento/testes (0.0.0-...) não consultam o GitHub.
+	a.updates = update.New(buildinfo.Version, func() bool { return a.settings.Get().UpdateCheck }, a.log)
 	a.api = api.New(api.Deps{
 		Store: a.store, Settings: a.settings, Core: a.core, Devices: a.devices, Proxy: a.proxy,
-		Media: a.sup, Events: a.events, System: a, Logger: a.log, AdminPort: a.cfg.AdminPort, DevOrigins: a.cfg.DevOrigins,
+		Media: a.sup, Events: a.events, System: a, Updates: a.updates, Logger: a.log, AdminPort: a.cfg.AdminPort, DevOrigins: a.cfg.DevOrigins,
 	})
 	return a.loadOBSConfig(ctx)
 }
@@ -250,6 +255,7 @@ func (a *App) Run(ctx context.Context) error {
 	run(a.bridge.Run)
 	run(a.core.Run)
 	run(a.publishSystem)
+	run(a.updates.Run)
 
 	adminSrv := &http.Server{Handler: a.adminHandler(), ReadHeaderTimeout: 10 * time.Second, IdleTimeout: 120 * time.Second,
 		ErrorLog: slog.NewLogLogger(a.log.Handler(), slog.LevelDebug)}

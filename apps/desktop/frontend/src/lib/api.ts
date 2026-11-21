@@ -12,8 +12,22 @@ export class ApiError extends Error {
 
 declare global {
   interface Window {
-    go?: { main?: { App?: { ServerURL?: () => Promise<string> } } };
+    go?: { main?: { App?: { ServerURL?: () => Promise<string>; OpenReleaseURL?: (url: string) => Promise<boolean> } } };
   }
+}
+
+/** Páginas e downloads de release do repositório oficial (aviso de atualização). */
+export const RELEASES_PREFIX = 'https://github.com/gersongabrieldev/SacraLink/releases/';
+
+/** Abre uma página de release no navegador padrão (Wails) ou numa nova aba. */
+export async function openReleaseURL(url: string): Promise<void> {
+  if (!url.startsWith(RELEASES_PREFIX)) return;
+  try {
+    if (await window.go?.main?.App?.OpenReleaseURL?.(url)) return;
+  } catch {
+    /* fora do Wails */
+  }
+  window.open(url, '_blank', 'noopener,noreferrer');
 }
 
 /** Descobre a URL do servidor: Wails (binding), variável do Vite ou mesma origem. */

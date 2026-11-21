@@ -47,6 +47,8 @@ export function SettingsPage() {
           </div>
           <Toggle checked={s.iceTcp} onChange={(v) => setS({ ...s, iceTcp: v })} label="Permitir mídia WebRTC sobre TCP" hint="Ajuda em redes que bloqueiam UDP; reinicia o servidor de mídia." />
           <Toggle checked={s.mdns} onChange={(v) => setS({ ...s, mdns: v })} label="Anunciar o servidor na rede local (mDNS)" hint="Permite que celulares já pareados reencontrem este computador se o IP mudar. O pareamento continua exigindo o QR Code." />
+          <Toggle checked={s.updateCheck} onChange={(v) => setS({ ...s, updateCheck: v })} label="Avisar quando houver versão nova"
+            hint="Consulta a lista pública de versões do SacraLink no GitHub ao abrir o painel e a cada 12 horas. Nada é baixado ou instalado sem você clicar." />
           <button className="btn-primary" onClick={save}>Salvar</button>
         </div>
       </Section>

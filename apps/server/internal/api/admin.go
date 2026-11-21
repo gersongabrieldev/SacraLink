@@ -23,6 +23,7 @@ import (
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/obsbridge"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/settings"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/store"
+	"github.com/gersongabrieldev/sacralink/apps/server/internal/update"
 	"github.com/gersongabrieldev/sacralink/apps/server/internal/whip"
 )
 
@@ -73,6 +74,7 @@ type Deps struct {
 	Media      *media.Supervisor
 	Events     *events.Hub
 	System     System
+	Updates    *update.Checker
 	Logger     *slog.Logger
 	AdminPort  int
 	DevOrigins bool // aceitar o servidor de desenvolvimento do Vite
@@ -159,6 +161,8 @@ func (s *Server) AdminHandler() http.Handler {
 	m.HandleFunc("GET /api/v1/system/firewall", a(s.firewallStatus))
 	m.HandleFunc("POST /api/v1/system/firewall", a(s.applyFirewall))
 	m.HandleFunc("POST /api/v1/system/autostart", a(s.autostart))
+	m.HandleFunc("GET /api/v1/update", a(s.updateStatus))
+	m.HandleFunc("POST /api/v1/update/check", a(s.updateCheck))
 	m.HandleFunc("GET /api/v1/settings", a(s.getSettings))
 	m.HandleFunc("PUT /api/v1/settings", a(s.putSettings))
 	m.HandleFunc("GET /api/v1/network/status", a(s.network(false)))
@@ -350,6 +354,25 @@ func (s *Server) ws(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) systemStatus(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, s.d.System.Status(r.Context()))
+}
+
+// updateStatus: resultado da última verificação de versão nova no GitHub.
+func (s *Server) updateStatus(w http.ResponseWriter, r *http.Request) {
+	if s.d.Updates == nil {
+		writeJSON(w, http.StatusOK, update.Status{Current: buildinfo.Version})
+		return
+	}
+	writeJSON(w, http.StatusOK, s.d.Updates.Status())
+}
+
+// updateCheck verifica agora (no máximo uma consulta por minuto ao GitHub).
+func (s *Server) updateCheck(w http.ResponseWriter, r *http.Request) {
+	if s.d.Updates == nil {
+		writeJSON(w, http.StatusOK, update.Status{Current: buildinfo.Version})
+		return
+	}
+	st, _ := s.d.Updates.CheckNow(r.Context()) // a falha vai em st.Error
+	writeJSON(w, http.StatusOK, st)
 }
 
 func (s *Server) systemLogs(w http.ResponseWriter, r *http.Request) {

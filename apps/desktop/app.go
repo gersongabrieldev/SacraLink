@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/wailsapp/wails/v2/pkg/options"
@@ -48,6 +49,20 @@ func (a *App) ServerURL() string { return a.serverURL }
 
 // AppVersion retorna a versão do painel.
 func (a *App) AppVersion() string { return Version }
+
+// releasesPrefix: o painel só abre no navegador páginas e downloads de
+// releases do repositório oficial (aviso de atualização).
+const releasesPrefix = "https://github.com/gersongabrieldev/SacraLink/releases/"
+
+// OpenReleaseURL abre no navegador padrão a página ou o instalador de uma
+// release. Retorna false (sem abrir nada) para qualquer outro endereço.
+func (a *App) OpenReleaseURL(url string) bool {
+	if a.ctx == nil || !strings.HasPrefix(url, releasesPrefix) || strings.ContainsAny(url, " \"'<>\\\r\n") {
+		return false
+	}
+	runtime.BrowserOpenURL(a.ctx, url)
+	return true
+}
 
 // OpenLogsFolder abre a pasta de logs do SacraLink no Explorer.
 func (a *App) OpenLogsFolder() {

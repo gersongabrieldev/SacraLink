@@ -68,7 +68,11 @@ novo se ele mudar.
   painel: o assistente cria uma nova senha (aparelhos, câmeras e configurações
   são mantidos). Digite o comando **sem** `.exe`: assim o Windows usa o
   `sacralink-server.com`, que mostra a resposta e espera o término.
-- **Atualizar:** rode o instalador da nova versão; os dados são preservados.
+- **Atualizar:** quando sai uma versão nova, o painel mostra no topo
+  *Nova versão do SacraLink* com o botão **Baixar instalador** (a partir da
+  0.2.0; desligue em *Configurações → Avisar quando houver versão nova*).
+  Rode o instalador: ele encerra o SacraLink do jeito normal, atualiza e
+  preserva os dados. Evite atualizar durante uma transmissão.
 - **Desinstalar:** Configurações do Windows → Aplicativos. As regras de
   firewall são removidas; o desinstalador pergunta se deve apagar os dados.
 
