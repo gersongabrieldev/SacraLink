@@ -1,7 +1,10 @@
 name: Release
 
-# Gera o instalador SacraLink-Setup-x64.exe e publica um rascunho de release.
-# Disparo: tag vX.Y.Z (ex.: git tag v0.1.0 && git push origin v0.1.0) ou manual.
+# Gera o instalador SacraLink-Setup-x64.exe e publica a release da tag.
+# Disparo: tag vX.Y.Z (ex.: git tag v0.1.0 && git push origin v0.1.0) ou manual
+# (o disparo manual só gera o artefato, sem publicar).
+# Notas da versão: docs/releases/vX.Y.Z.md (obrigatório para tags).
+# Versões 0.x ou com sufixo (ex.: 1.0.0-rc.1) saem como pré-lançamento.
 on:
   push:
     tags: ["v*"]
@@ -37,6 +40,11 @@ jobs:
           "version=$v" >> $env:GITHUB_OUTPUT
           $n = ($v -split "-")[0].Split("."); while ($n.Count -lt 4) { $n += "0" }
           "numeric=$(($n[0..3]) -join ".")" >> $env:GITHUB_OUTPUT
+          $pre = if ($v.Contains("-") -or $v.StartsWith("0.")) { "true" } else { "false" }
+          "prerelease=$pre" >> $env:GITHUB_OUTPUT
+          $notes = "docs/releases/v$v.md"
+          if ("${{ github.ref }}".StartsWith("refs/tags/v") -and -not (Test-Path $notes)) { throw "Faltam as notas da versão em $notes" }
+          "notes=$notes" >> $env:GITHUB_OUTPUT
       - name: Build
         shell: pwsh
         run: ./scripts/build-windows.ps1 -Version "${{ steps.ver.outputs.version }}"
@@ -62,11 +70,15 @@ jobs:
         with:
           name: SacraLink-Setup-x64-${{ steps.ver.outputs.version }}
           path: installer/windows/Output/*
-      - name: Rascunho de release
+      - name: Publicar release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          draft: true
+          name: SacraLink ${{ steps.ver.outputs.version }}
+          body_path: ${{ steps.ver.outputs.notes }}
+          draft: false
+          prerelease: ${{ steps.ver.outputs.prerelease == 'true' }}
+          fail_on_unmatched_files: true
           files: |
             installer/windows/Output/SacraLink-Setup-x64.exe
             installer/windows/Output/SHA256SUMS.txt

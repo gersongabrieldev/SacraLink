@@ -6,6 +6,12 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 
 ## [Não lançado]
 
+## [0.1.0] - 2026-11-21
+
+Primeira versão pública, como **pré-lançamento**: instalador sem assinatura
+digital e MVP ainda sem validação com o OBS Studio real e com celulares reais
+([checklist](docs/mvp-checklist.md)).
+
 ### Adicionado
 - **Orientação controlada pelo painel**: cada câmera pode ser horizontal
   (16:9) ou vertical (9:16). O celular recebe na hora (`hello_ack`/`config`):
@@ -42,3 +48,6 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
   (`sl-fakeobs`), demonstração local e capturas de tela.
 - Documentação: APIs, protocolo, instalação, OBS, acesso externo, app,
   testes, desempenho, assinatura de código.
+
+[Não lançado]: https://github.com/gersongabrieldev/SacraLink/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/gersongabrieldev/SacraLink/releases/tag/v0.1.0
