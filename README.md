@@ -131,3 +131,5 @@ RTSP × WebRTC, primeira release assinada, testes de carga com 8 celulares.
 ## Licença
 
 [MIT](LICENSE). Componentes de terceiros: [docs/licenses.md](docs/licenses.md).
+Assinatura de código: [política](CODE_SIGNING_POLICY.md) (pedido de
+assinatura gratuita à SignPath Foundation em andamento).
