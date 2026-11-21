@@ -12,7 +12,7 @@ do OBS Studio real ainda precisam de validação manual (ver
 
 | # | Critério | Status | Evidência / próximo passo |
 |---|---|---|---|
-| 1 | Instalação por `.exe` no Windows | 🟨 | `SacraLink-Setup-x64.exe` **gerado pelo CI** (artefato privado, 30 MB); falta instalar em VMs Windows 10/11 limpas e assinar |
+| 1 | Instalação por `.exe` no Windows | 🟨 | `SacraLink-Setup-x64.exe` **publicado na [release v0.1.0](https://github.com/gersongabrieldev/SacraLink/releases/tag/v0.1.0)** (pré-lançamento, 31 MB, SHA-256 conferido após o download); falta instalar em VMs Windows 10/11 limpas e assinar |
 | 2 | Serviços iniciam sem Docker/terminal | 🟩 | `sacralink-server.exe` (subsistema GUI, bandeja) executado no Windows 11; supervisor do MediaMTX testado com o binário real |
 | 3 | App mostra estado de funcionamento | 🟩 | Cabeçalho do painel validado visualmente (servidor, OBS, câmeras, IP, CPU/RAM, rede, AO VIVO) |
 | 4 | Android transmite vídeo real por Wi-Fi | 🟨 | **Câmera pelo navegador** testada de ponta a ponta com o motor do Chrome (Edge/Chrome headless, câmera simulada → H.264 + Opus no RTSP); app com **APK de depuração gerado no CI**; **falta teste em aparelho** |
@@ -32,6 +32,6 @@ do OBS Studio real ainda precisam de validação manual (ver
 ## Pendências conhecidas (não bloqueiam o código, mas bloqueiam o "MVP concluído")
 
 - Validação com OBS Studio real, Android e iPhone (itens 4, 5, 7, 8, 13, 14).
-- Primeira release com instalador e teste em VM.
+- Teste em VM do instalador da v0.1.0 (primeira release, publicada em 2026-11-21).
 - PoC de latência RTSP × WHEP ([poc-ingestao.md](obs/poc-ingestao.md)).
 - Assinatura de código ([assinatura.md](installation/assinatura.md)).

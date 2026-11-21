@@ -64,7 +64,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "ISCC falhou" }
           $exe = "installer/windows/Output/SacraLink-Setup-x64.exe"
           $h = (Get-FileHash $exe -Algorithm SHA256).Hash.ToLower()
-          "$h  SacraLink-Setup-x64.exe" | Out-File -Encoding ascii installer/windows/Output/SHA256SUMS.txt
+          # Quebra de linha LF: "sha256sum -c" no Linux/macOS rejeita CRLF.
+          [IO.File]::WriteAllText("$PWD/installer/windows/Output/SHA256SUMS.txt", "$h  SacraLink-Setup-x64.exe`n")
           Get-ChildItem installer/windows/Output
       - uses: actions/upload-artifact@v4
         with:
