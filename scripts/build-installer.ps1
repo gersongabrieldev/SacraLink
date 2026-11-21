@@ -109,20 +109,26 @@ switch ($Phase) {
             Get-Content (Join-Path $d "signtool-log.txt") | ForEach-Object { Write-Annotation "notice" "SignTool: $_" }
         }
         if ($isccExit -ne 0) { throw "ISCC falhou: $(($isccOut | Select-Object -Last 6) -join ' | ')" }
+        # Partes internas separadas na coleta: <sha256>.exe.
+        $parts = @(if ($Mode -ne "plain") {
+                Get-ChildItem -LiteralPath $d -Recurse -File | Where-Object { $_.Name -match '^[0-9a-f]{64}\.exe$' }
+            })
         if ($Mode -eq "collect") {
-            $n = @(Get-ChildItem -LiteralPath $d -Filter *.exe).Count
-            if ($n -eq 0) { throw "o Inno Setup não pediu assinatura de nenhum arquivo interno" }
-            Write-Host "Para assinar (rodada 2): $n arquivo(s) interno(s) do instalador"
+            if ($parts.Count -eq 0) { throw "o Inno Setup não pediu assinatura de nenhum arquivo interno" }
+            Write-Host "Para assinar (rodada 2): $($parts.Count) arquivo(s) interno(s) do instalador"
         }
         if ($Mode -eq "replay") {
-            $expected = @(Get-ChildItem -LiteralPath $d -Recurse -File -Filter *.exe | ForEach-Object { $_.BaseName.ToLower() })
             $used = @(if (Test-Path (Join-Path $d "used.txt")) { Get-Content (Join-Path $d "used.txt") })
-            $missing = @($expected | Where-Object { $_ -notin $used })
-            if (Test-Path (Join-Path $d "unknown.txt")) { Write-Host "Sem cópia assinada: $(Get-Content (Join-Path $d 'unknown.txt') -Raw)" }
+            $missing = @($parts | Where-Object { $_.BaseName.ToLower() -notin $used })
             if ($missing.Count -gt 0 -or (Test-Path (Join-Path $d "unknown.txt"))) {
                 throw "a segunda compilação não foi idêntica à da coleta: o instalador ficaria com partes sem assinatura"
             }
-            Write-Host "Instalador recompilado com $($used.Count) arquivo(s) interno(s) assinado(s)"
+            # O ISCC deixou em Output o instalador com assinatura descartável;
+            # volta a versão sem assinatura, que vai para a rodada 3.
+            $final = Join-Path $d "final\$setupName"
+            if (-not (Test-Path $final)) { throw "o instalador final não passou pelo SignTool" }
+            Copy-Item $final (Join-Path $output $setupName) -Force
+            Write-Host "Instalador recompilado com $($used.Count) parte(s) interna(s) assinada(s); versão final sem assinatura em Output"
         }
     }
     "stage-setup" {
