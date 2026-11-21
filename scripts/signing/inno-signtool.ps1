@@ -33,20 +33,24 @@ if ($leaf -eq "SacraLink-Setup-x64.exe") {
 }
 $hash = (Get-FileHash -LiteralPath $Target -Algorithm SHA256).Hash.ToLower()
 $copy = Join-Path $Dir "$hash.exe"
+# Registro lido pelo build-installer.ps1 (o ISCC não repassa esta saída).
+function Write-Log([string]$msg) {
+    Add-Content -LiteralPath (Join-Path $Dir "signtool-log.txt") -Value "$Mode $leaf $($hash.Substring(0, 12)) $msg"
+}
 
 if ($Mode -eq "collect") {
     New-Item -ItemType Directory -Force $Dir | Out-Null
     Copy-Item -LiteralPath $Target -Destination $copy -Force
-    Write-Host "separado para assinar: $leaf ($hash)"
+    Write-Log "separado ($((Get-Item -LiteralPath $Target).Length) bytes)"
     exit 0
 }
 
 if (Test-Path -LiteralPath $copy) {
     Copy-Item -LiteralPath $copy -Destination $Target -Force
     Add-Content -LiteralPath (Join-Path $Dir "used.txt") -Value $hash
-    Write-Host "cópia assinada aplicada: $leaf"
+    Write-Log "cópia assinada aplicada"
 } else {
     Add-Content -LiteralPath (Join-Path $Dir "unknown.txt") -Value "$hash $leaf"
-    Write-Host "sem cópia assinada: $leaf ($hash)"
+    Write-Log "SEM cópia assinada"
 }
 exit 0

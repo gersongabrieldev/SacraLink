@@ -38,6 +38,13 @@ param(
     [switch]$RequireTrusted
 )
 $ErrorActionPreference = "Stop"
+# No GitHub Actions, erros e o registro do SignTool viram anotações do job
+# (visíveis sem login, ao contrário dos logs).
+$gha = $env:GITHUB_ACTIONS -eq "true"
+function Write-Annotation([string]$kind, [string]$msg) {
+    if ($gha) { Write-Host "::$kind title=Instalador::$($msg -replace "`r?`n", ' | ')" } else { Write-Host $msg }
+}
+trap { Write-Annotation "error" "fase ${Phase}: $($_.Exception.Message)"; break }
 $root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $dist = Join-Path $root "dist-release\SacraLink"
 $output = Join-Path $root "installer\windows\Output"
@@ -89,14 +96,19 @@ switch ($Phase) {
         $isccArgs = @("/DAppVersion=$Version", "/DAppVersionNumeric=$(Get-Numeric $Version)")
         if ($Mode -ne "plain") {
             $d = Full $Dir
-            if ($Mode -eq "collect") { New-Empty $d } else { Remove-Item (Join-Path $d "used.txt"), (Join-Path $d "unknown.txt") -ErrorAction SilentlyContinue }
+            if ($Mode -eq "collect") { New-Empty $d }
+            else { "used.txt", "unknown.txt", "signtool-log.txt" | ForEach-Object { Remove-Item (Join-Path $d $_) -ErrorAction SilentlyContinue } }
             $shim = Join-Path $PSScriptRoot "signing\inno-signtool.ps1"
             # $q e $f são substituídos pelo ISCC (aspas e arquivo a assinar).
             $tool = 'pwsh -NoProfile -NonInteractive -File $q' + $shim + '$q -Mode ' + $Mode + ' -Dir $q' + $d + '$q -Target $f'
             $isccArgs += "/DSign=1", "/Ssigntool=$tool"
         }
-        & (Find-Iscc) @isccArgs (Join-Path $root "installer\windows\SacraLink.iss")
-        if ($LASTEXITCODE -ne 0) { throw "ISCC falhou" }
+        & (Find-Iscc) @isccArgs (Join-Path $root "installer\windows\SacraLink.iss") 2>&1 | Tee-Object -Variable isccOut | Out-Host
+        $isccExit = $LASTEXITCODE
+        if ($Mode -ne "plain" -and (Test-Path (Join-Path $d "signtool-log.txt"))) {
+            Get-Content (Join-Path $d "signtool-log.txt") | ForEach-Object { Write-Annotation "notice" "SignTool: $_" }
+        }
+        if ($isccExit -ne 0) { throw "ISCC falhou: $(($isccOut | Select-Object -Last 6) -join ' | ')" }
         if ($Mode -eq "collect") {
             $n = @(Get-ChildItem -LiteralPath $d -Filter *.exe).Count
             if ($n -eq 0) { throw "o Inno Setup não pediu assinatura de nenhum arquivo interno" }
