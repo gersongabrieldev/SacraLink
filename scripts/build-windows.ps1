@@ -58,6 +58,9 @@ Step "sacralink-server.exe"
 Push-Location (Join-Path $root "apps\server")
 $pkg = "github.com/gersongabrieldev/sacralink/apps/server/internal/buildinfo"
 go build -trimpath -ldflags "-s -w -H windowsgui -X $pkg.Version=$Version -X $pkg.Commit=$commit -X $pkg.Date=$date" -o (Join-Path $out "sacralink-server.exe") ./cmd/sacralink-server; Check "servidor"
+
+Step "sacralink-server.com (comandos de terminal)"
+go build -trimpath -ldflags "-s -w" -o (Join-Path $out "sacralink-server.com") ./cmd/sacralink-server-console; Check "launcher de console"
 Pop-Location
 
 Step "Painel para navegador (servido pelo servidor)"

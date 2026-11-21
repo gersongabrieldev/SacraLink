@@ -40,7 +40,7 @@ export function Login() {
           <LogIn size={16} /> Entrar
         </button>
         <p className="mt-4 text-xs text-muted">
-          Esqueceu a senha? No computador do SacraLink, execute <code>sacralink-server admin reset --confirm</code> e defina uma nova.
+          Esqueceu a senha? No computador do SacraLink, abra o PowerShell na pasta <code>C:\Program Files\SacraLink</code>, execute <code>.\sacralink-server admin reset --confirm</code> e reabra o painel para definir uma nova.
         </p>
       </form>
     </div>

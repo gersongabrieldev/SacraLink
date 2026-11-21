@@ -82,6 +82,9 @@ Name: "desktopicon"; Description: "{cm:TaskDesktop}"; Flags: unchecked
 [Files]
 Source: "{#SourceDir}\SacraLink.exe"; DestDir: "{app}"; Flags: ignoreversion signonce
 Source: "{#SourceDir}\sacralink-server.exe"; DestDir: "{app}"; Flags: ignoreversion signonce
+; Comandos de terminal (".\sacralink-server admin reset --confirm"): mostra a
+; saída e espera o término, o que o .exe (aplicativo de janela) não faz.
+Source: "{#SourceDir}\sacralink-server.com"; DestDir: "{app}"; Flags: ignoreversion signonce
 Source: "{#SourceDir}\mediamtx.exe"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\mediamtx.exe.sha256"; DestDir: "{app}"; Flags: ignoreversion
 Source: "{#SourceDir}\mediamtx-LICENSE.txt"; DestDir: "{app}"; Flags: ignoreversion

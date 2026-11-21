@@ -7,6 +7,10 @@
 //	sacralink-server firewall apply|remove [opções]   (executado com elevação UAC)
 //	sacralink-server admin reset --confirm            (recupera o acesso ao painel)
 //	sacralink-server version
+//
+// No Windows, os comandos de terminal devem ser chamados sem a extensão
+// (".\sacralink-server admin reset --confirm"): assim o terminal usa o
+// sacralink-server.com, de console, que mostra a saída e espera o término.
 package main
 
 import (
@@ -32,6 +36,10 @@ import (
 
 func main() {
 	if len(os.Args) > 1 {
+		switch os.Args[1] {
+		case "firewall", "admin", "version", "--version":
+			attachParentConsole()
+		}
 		switch os.Args[1] {
 		case "firewall":
 			os.Exit(firewallCmd(os.Args[2:]))

@@ -55,10 +55,15 @@ novo se ele mudar.
 | Logs (rotação 10 MB × 10, 30 dias) | `%LOCALAPPDATA%\SacraLink\logs` |
 | Programa | `C:\Program Files\SacraLink` |
 
-- **Esqueci a senha:** feche o SacraLink e execute
-  `"C:\Program Files\SacraLink\sacralink-server.exe" admin reset --confirm`.
-  Na próxima abertura o assistente cria uma nova senha (aparelhos e câmeras
-  são mantidos).
+- **Esqueci a senha:** no PowerShell ou no Prompt de Comando, execute
+  ```powershell
+  cd "C:\Program Files\SacraLink"
+  .\sacralink-server admin reset --confirm
+  ```
+  A resposta esperada é *Senha do administrador removida*. Feche e abra o
+  painel: o assistente cria uma nova senha (aparelhos, câmeras e configurações
+  são mantidos). Digite o comando **sem** `.exe`: assim o Windows usa o
+  `sacralink-server.com`, que mostra a resposta e espera o término.
 - **Atualizar:** rode o instalador da nova versão; os dados são preservados.
 - **Desinstalar:** Configurações do Windows → Aplicativos. As regras de
   firewall são removidas; o desinstalador pergunta se deve apagar os dados.

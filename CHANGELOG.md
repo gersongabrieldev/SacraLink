@@ -6,6 +6,19 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
 
 ## [Não lançado]
 
+### Corrigido
+- **Comandos de terminal sem resposta**: `sacralink-server admin reset
+  --confirm` (recuperação de senha), `version` e `firewall` não mostravam
+  nada no PowerShell/cmd, porque o servidor é um aplicativo de janela. O
+  instalador passa a incluir o `sacralink-server.com`, de console: chamado
+  sem extensão (`.\sacralink-server admin reset --confirm`), ele mostra a
+  saída, espera o término e devolve o código de saída. Chamado com `.exe`, o
+  servidor se conecta ao console de quem o chamou e também mostra a resposta.
+- `SHA256SUMS.txt` da release com quebra de linha LF (`sha256sum -c` no
+  Linux/macOS rejeitava CRLF).
+- Tela de login e guia de instalação com o comando de recuperação de senha
+  que funciona no PowerShell (o caminho entre aspas com argumentos dava erro).
+
 ## [0.1.0] - 2026-11-21
 
 Primeira versão pública, como **pré-lançamento**: instalador sem assinatura
