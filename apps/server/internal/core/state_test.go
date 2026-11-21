@@ -50,3 +50,17 @@ func TestDeviceTally(t *testing.T) {
 		t.Fatalf("unknown: %+v", d)
 	}
 }
+
+func TestApplyConfirmedStateImage(t *testing.T) {
+	s := &camState{}
+	applyConfirmedState(s, map[string]any{"exposureLocked": true, "exposureCompensation": -1.0, "whiteBalanceLocked": true, "colorTemperature": 3200.0})
+	c := s.tel.Camera
+	if c == nil || !c.ExposureLocked || c.ExposureCompensation != -1 || !c.WhiteBalanceLocked || c.ColorTemperature != 3200 {
+		t.Fatalf("estado de exposição/cor não aplicado: %+v", c)
+	}
+	// Destravar (resultado parcial) mantém o que não veio no estado.
+	applyConfirmedState(s, map[string]any{"exposureLocked": false})
+	if c := s.tel.Camera; c.ExposureLocked || c.ColorTemperature != 3200 {
+		t.Fatalf("destravar a exposição não deveria mexer na cor: %+v", c)
+	}
+}

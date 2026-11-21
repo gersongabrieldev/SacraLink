@@ -226,6 +226,49 @@ func TestCameraNoNavegador(t *testing.T) {
 	}
 	t.Logf("zoom no navegador: %s %v", res.Status, res.State["zoom"])
 
+	// Exposição e cor: executados quando a câmera do navegador permite travar
+	// (informado nas capacidades); senão "unsupported" (nunca finge).
+	var view struct {
+		Capabilities struct {
+			ExposureLock, WhiteBalanceLock bool
+			ColorTemperature               *struct{ Min, Max float64 }
+		}
+		ExposureLocked, WhiteBalanceLocked bool
+		ColorTemperature                   float64
+	}
+	admin.do("GET", camPath, nil, &view)
+	caps := view.Capabilities
+	expect := func(what string, supported bool, check func() bool) {
+		t.Helper()
+		if supported && (res.Status != "executed" || !check()) {
+			t.Fatalf("%s: esperava executado, veio %+v", what, res)
+		}
+		if !supported && res.Status != "unsupported" {
+			t.Fatalf("%s: sem o recurso deveria ser \"unsupported\", veio %+v", what, res)
+		}
+	}
+	cmd("exposure.lock", map[string]any{"locked": true}, false)
+	expect("travar exposição", caps.ExposureLock, func() bool { return res.State["exposureLocked"] == true })
+	cmd("whitebalance.temperature", map[string]any{"kelvin": 3200.0}, false)
+	expect("cor em 3200 K", caps.ColorTemperature != nil, func() bool {
+		k, _ := res.State["colorTemperature"].(float64)
+		return res.State["whiteBalanceLocked"] == true && k >= caps.ColorTemperature.Min && k <= caps.ColorTemperature.Max
+	})
+	if caps.ExposureLock || caps.ColorTemperature != nil {
+		waitFor(t, "painel com exposição/cor travadas", 5*time.Second, func() bool {
+			admin.do("GET", camPath, nil, &view)
+			return view.ExposureLocked == caps.ExposureLock && view.WhiteBalanceLocked == (caps.ColorTemperature != nil)
+		})
+	}
+	cmd("exposure.lock", map[string]any{"locked": false}, false)
+	expect("destravar exposição", caps.ExposureLock, func() bool { return res.State["exposureLocked"] == false })
+	cmd("whitebalance.lock", map[string]any{"locked": false}, false)
+	expect("destravar cor", caps.WhiteBalanceLock, func() bool {
+		return res.State["whiteBalanceLocked"] == false && res.State["colorTemperature"] == 0.0
+	})
+	t.Logf("exposição/cor no navegador: trava de exposição=%v, trava de cor=%v, temperatura=%v",
+		caps.ExposureLock, caps.WhiteBalanceLock, caps.ColorTemperature)
+
 	// 7) Prioridade do operador do celular por 3 s; "force" do operador central.
 	js(`document.getElementById('mic').click(); true`, nil)
 	cmd("audio.mute", map[string]any{"muted": true}, false)

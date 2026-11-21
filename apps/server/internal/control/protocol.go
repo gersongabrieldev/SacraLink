@@ -54,6 +54,13 @@ type Lens struct {
 	OpticalZoomFactors []float64 `json:"opticalZoomFactors,omitempty"`
 }
 
+// Range é uma faixa de ajuste informada pela câmera.
+type Range struct {
+	Min  float64 `json:"min"`
+	Max  float64 `json:"max"`
+	Step float64 `json:"step"`
+}
+
 // Capabilities são as capacidades REAIS do aparelho.
 type Capabilities struct {
 	Lenses        []Lens `json:"lenses"`
@@ -65,6 +72,13 @@ type Capabilities struct {
 	MaxFPS        int    `json:"maxFps"`
 	HardwareH264  bool   `json:"hardwareH264"`
 	Thermal       bool   `json:"thermal"`
+	// Trava de exposição e de balanço de branco (cor) e as faixas de
+	// compensação de exposição (EV) e de temperatura de cor (K). Ausentes =
+	// o aparelho não permite (o painel não oferece o controle).
+	ExposureLock         bool   `json:"exposureLock"`
+	ExposureCompensation *Range `json:"exposureCompensation,omitempty"`
+	WhiteBalanceLock     bool   `json:"whiteBalanceLock"`
+	ColorTemperature     *Range `json:"colorTemperature,omitempty"`
 }
 
 // Hello é a primeira mensagem do aparelho após conectar.
@@ -124,6 +138,12 @@ type CameraTelemetry struct {
 	Zoom     float64 `json:"zoom"`
 	Torch    bool    `json:"torch"`
 	MicMuted bool    `json:"micMuted"`
+	// Exposição e cor (0 em ColorTemperature = cor no automático ou travada
+	// no valor que a câmera tinha).
+	ExposureLocked       bool    `json:"exposureLocked"`
+	ExposureCompensation float64 `json:"exposureCompensation"`
+	WhiteBalanceLocked   bool    `json:"whiteBalanceLocked"`
+	ColorTemperature     float64 `json:"colorTemperature"`
 }
 
 // LocalChange informa uma alteração feita pelo operador no próprio celular.
@@ -187,6 +207,12 @@ const (
 	CmdAudioMute       = "audio.mute"
 	CmdStreamReconnect = "stream.reconnect"
 	CmdPresetApply     = "preset.apply"
+	// Exposição e cor: travar impede a câmera de "puxar" brilho e cor sozinha
+	// (vitrais, velas, projetor) e permite combinar as câmeras entre si.
+	CmdExposureLock         = "exposure.lock"            // {locked}
+	CmdExposureCompensation = "exposure.compensation"    // {value} em EV
+	CmdWhiteBalanceLock     = "whitebalance.lock"        // {locked}
+	CmdWhiteBalanceTemp     = "whitebalance.temperature" // {kelvin}; trava a cor nessa temperatura
 )
 
 // ErrInvalidCommand indica comando ou parâmetros inválidos.
@@ -253,6 +279,12 @@ func ValidateCommand(name string, p map[string]any) error {
 		return nil
 	case CmdPresetApply:
 		return str(p, "presetId", 32)
+	case CmdExposureLock, CmdWhiteBalanceLock:
+		return boolean(p, "locked")
+	case CmdExposureCompensation:
+		return num(p, "value", -10, 10)
+	case CmdWhiteBalanceTemp:
+		return num(p, "kelvin", 1500, 12000)
 	}
 	return fmt.Errorf("%w: %q não é suportado", ErrInvalidCommand, name)
 }

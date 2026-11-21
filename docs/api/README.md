@@ -106,3 +106,30 @@ Proteções: escuta só em 127.0.0.1; `Host` obrigatório `127.0.0.1:7380`/
 
 Limites: 20 req/s por IP; pareamento 1 a cada 5 s por IP; 10 falhas de
 autenticação em 5 min bloqueiam o IP por 10 min.
+
+### Comandos de câmera (canal de controle)
+
+Enviados pelo painel em `POST /cameras/{id}/commands` e validados no
+servidor (`internal/control/protocol.go`, lista de permissão). O aparelho
+responde `executed`, `unsupported` (recurso ausente: nunca finge), `conflict`
+(ajuste local nos últimos 3 s; `force` ignora) ou `failed`, com o estado
+confirmado em `state`.
+
+| Comando | Parâmetros | Capacidade exigida |
+|---|---|---|
+| `zoom.set` · `zoom.step` | `{value}` 0,1–100 · `{delta}` −10–10 | faixa de zoom da lente |
+| `lens.select` · `camera.flip` | `{lensId}` · — | lentes informadas |
+| `focus.point` · `exposure.point` | `{x, y}` 0–1 | `focusPoint` / `exposurePoint` |
+| `torch.set` | `{on}` | `torch` |
+| `audio.mute` | `{muted}` | — |
+| `quality.set` | `{profileId}` ou `{width, height, fps, maxBitrateKbps}` | — |
+| `preset.apply` | `{presetId}` (resolvido no servidor) | — |
+| `stream.reconnect` | — | — |
+| `exposure.lock` | `{locked}` | `exposureLock` |
+| `exposure.compensation` | `{value}` EV, −10–10 | `exposureCompensation {min, max, step}` |
+| `whitebalance.lock` | `{locked}` (destravar volta a cor ao automático) | `whiteBalanceLock` |
+| `whitebalance.temperature` | `{kelvin}` 1500–12000 (trava a cor nessa temperatura) | `colorTemperature {min, max, step}` |
+
+O estado de exposição e cor volta em `state` e na telemetria
+(`exposureLocked`, `exposureCompensation`, `whiteBalanceLocked`,
+`colorTemperature`; 0 = cor travada no valor atual ou automática).

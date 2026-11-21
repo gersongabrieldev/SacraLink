@@ -118,6 +118,7 @@ adaptadores Ethernet; ainda não testado com o SacraLink em aparelhos reais.*
 | Troca de lente | Câmeras que o navegador lista | Câmeras que o Safari lista | Lentes reais |
 | Lanterna | Quando o Chrome expõe | Normalmente não | Sim |
 | Foco/exposição por toque | Quando o Chrome expõe | Não | Sim |
+| Travar exposição e cor (pelo painel) | Quando a câmera permite (exposição é comum; cor depende do aparelho) | Não* | Ainda não |
 | Bateria na telemetria | Sim | Não | Sim |
 | Temperatura do aparelho | Não | Não | Sim |
 | Pinning do certificado | Não (aceite manual) | Não (aceite manual) | Sim |
@@ -127,6 +128,17 @@ adaptadores Ethernet; ainda não testado com o SacraLink em aparelhos reais.*
 O painel só oferece um controle remoto quando o celular informa que o
 recurso existe; comandos para recursos ausentes voltam como "não suportado"
 — a página nunca finge que aplicou.
+
+**Exposição e cor travadas** (painel → *Mais ações* da câmera → *Exposição e
+cor*): com o automático, cada celular clareia, escurece e muda a cor sozinho
+quando alguém passa na frente de um vitral, de velas ou do projetor, e as
+câmeras ficam diferentes entre si no corte. Antes da celebração, enquadre,
+ajuste o brilho, escolha a mesma **temperatura de cor** para todas (ex.:
+3200 K com refletores halógenos, 5600 K com luz do dia) e use **Copiar para as
+outras câmeras**. O cartão da câmera mostra um cadeado (*Exp*, *Cor*) enquanto
+algo estiver travado. Trocar de lente mantém as travas. *Situação: testado
+automaticamente com o Chrome/Edge (câmera simulada com trava de exposição);
+ainda não testado em celulares reais.*
 
 \* **Situação dos testes:** o fluxo completo foi testado automaticamente com
 o motor do Chrome (Edge/Chrome em modo headless com câmera simulada — ver

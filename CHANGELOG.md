@@ -13,6 +13,18 @@ Todas as mudanças relevantes do projeto são registradas aqui. O formato segue 
   e só forçam (`taskkill`) o que sobrar após 20 s. Novo comando
   `sacralink-server quit [--timeout 20s]`. Vale a partir da próxima
   atualização (a 0.1.0 em execução ainda é encerrada à força).
+- **Exposição e cor travadas pelo painel** (*Mais ações → Exposição e cor*):
+  travar a exposição, ajustar o brilho (EV), travar a cor ou escolher a
+  temperatura (2700–6500 K) e **copiar para as outras câmeras**, para que as
+  imagens não oscilem com vitrais, velas e projetor e combinem no corte.
+  Novos comandos `exposure.lock`, `exposure.compensation`,
+  `whitebalance.lock` e `whitebalance.temperature`; capacidades
+  `exposureLock`, `exposureCompensation`, `whiteBalanceLock` e
+  `colorTemperature`. Funciona na câmera pelo navegador (Chrome no Android,
+  quando a câmera permite); o app nativo ainda não informa esses recursos e
+  o painel não os oferece para ele. Teste ponta a ponta com o Edge/Chrome
+  headless (trava de exposição executada e confirmada; cor "não suportado"
+  na câmera simulada). Ainda não testado em celulares reais.
 - Documentação: **celular no cabo** com adaptador USB → Ethernet para a câmera
   principal, sem instalar nada nem ativar o modo desenvolvedor.
 - CI compila o instalador (Inno Setup) a cada envio, não só na release.

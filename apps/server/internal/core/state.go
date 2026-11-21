@@ -112,6 +112,11 @@ type CameraView struct {
 	Facing   string   `json:"facing,omitempty"`
 	MicMuted bool     `json:"micMuted"`
 	Torch    bool     `json:"torch"`
+	// Exposição e cor (travas e ajustes confirmados pelo aparelho).
+	ExposureLocked       bool    `json:"exposureLocked"`
+	ExposureCompensation float64 `json:"exposureCompensation"`
+	WhiteBalanceLocked   bool    `json:"whiteBalanceLocked"`
+	ColorTemperature     float64 `json:"colorTemperature,omitempty"`
 
 	Capabilities *control.Capabilities  `json:"capabilities,omitempty"`
 	OBSSource    obsbridge.SourceStatus `json:"obsSource"`
@@ -211,6 +216,8 @@ func (c *camState) view(src obsbridge.SourceStatus) CameraView {
 		}
 		if t.Camera != nil {
 			v.Zoom, v.LensID, v.Facing, v.MicMuted, v.Torch = t.Camera.Zoom, t.Camera.LensID, t.Camera.Facing, t.Camera.MicMuted, t.Camera.Torch
+			v.ExposureLocked, v.ExposureCompensation = t.Camera.ExposureLocked, t.Camera.ExposureCompensation
+			v.WhiteBalanceLocked, v.ColorTemperature = t.Camera.WhiteBalanceLocked, t.Camera.ColorTemperature
 		}
 	}
 	return v

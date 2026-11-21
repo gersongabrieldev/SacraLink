@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  BatteryCharging, BatteryFull, BatteryLow, BatteryMedium, Bookmark, Flashlight, Mic, MicOff, MoreHorizontal, RefreshCw,
+  BatteryCharging, BatteryFull, BatteryLow, BatteryMedium, Bookmark, Flashlight, Lock, Mic, MicOff, MoreHorizontal, RefreshCw,
   SwitchCamera, Thermometer, ZoomIn, ZoomOut,
 } from 'lucide-react';
+import { hasImageControls, ImageControls } from './ImageControls';
 import { ApiError } from '../lib/api';
 import { useStore } from '../lib/store';
 import { t } from '../lib/i18n';
@@ -141,6 +142,11 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted">
+            {(cam.exposureLocked || cam.whiteBalanceLocked) && (
+              <span className="inline-flex items-center gap-0.5" title={[cam.exposureLocked && 'Exposição travada', cam.whiteBalanceLocked && (cam.colorTemperature ? `Cor travada em ${cam.colorTemperature} K` : 'Cor travada')].filter(Boolean).join(' · ')}>
+                <Lock size={12} /> {cam.exposureLocked && cam.whiteBalanceLocked ? 'Exp+Cor' : cam.exposureLocked ? 'Exp' : 'Cor'}
+              </span>
+            )}
             {cam.thermal && cam.thermal !== 'nominal' && (
               <span className={cam.thermal === 'critical' || cam.thermal === 'serious' ? 'text-onair' : 'text-warn'} title={`Temperatura: ${cam.thermal}`}>
                 <Thermometer size={14} />
@@ -229,6 +235,7 @@ export function CameraCard({ cam, profiles, previewActive }: { cam: CameraView; 
                     ))}
                   </select>
                 </div>
+                {hasImageControls(cam) && <ImageControls cam={cam} command={command} />}
                 <div className="px-2 py-1">
                   <div className="label">Presets</div>
                   {presets.map((p) => (

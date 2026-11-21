@@ -52,6 +52,16 @@ const S = {
   torchCap: false,
   torch: false,
   focusCap: false,
+  // Exposição e cor (Chrome no Android, quando a câmera permite): travar
+  // impede a câmera de "puxar" brilho e cor sozinha e combina as câmeras.
+  exposureLockCap: false,
+  exposureLocked: false,
+  evCaps: null, // {min, max, step} da compensação de exposição (EV)
+  ev: 0,
+  wbLockCap: false,
+  wbLocked: false,
+  tempCaps: null, // {min, max, step} da temperatura de cor (K)
+  colorTemp: 0, // 0 = cor travada no valor que a câmera tinha (ou automática)
   micMuted: false,
   profile: PROFILES.equilibrado,
   limits: null,
@@ -288,6 +298,7 @@ async function openCapture() {
   const current = S.lenses.find((l) => l.deviceId === devId);
   if (current) S.lensId = current.id;
   await readCapabilities();
+  await reapplyImage();
   await publisher.replaceTracks();
   render();
 }
@@ -362,6 +373,7 @@ async function readCapabilities() {
   S.torch = S.torchCap && settings.torch === true;
   const supported = navigator.mediaDevices.getSupportedConstraints();
   S.focusCap = !!supported.pointsOfInterest && Array.isArray(caps.focusMode) && caps.focusMode.length > 0;
+  readImageCapabilities(caps);
 
   const lens = lensById(S.lensId);
   if (lens) {
@@ -379,6 +391,33 @@ async function readCapabilities() {
   }
 }
 
+// Capacidades de exposição e cor da câmera aberta. Uma câmera nova (troca de
+// lente, reabertura) sem o recurso volta ao automático.
+function readImageCapabilities(caps) {
+  const range = (r, step) => (r && r.max > r.min ? { min: r.min, max: r.max, step: r.step || step } : null);
+  const em = caps.exposureMode || [];
+  S.exposureLockCap = em.includes('manual') && em.includes('continuous');
+  S.evCaps = range(caps.exposureCompensation, 0.1);
+  const wm = caps.whiteBalanceMode || [];
+  S.wbLockCap = wm.includes('manual') && wm.includes('continuous');
+  S.tempCaps = S.wbLockCap ? range(caps.colorTemperature, 50) : null;
+  if (!S.exposureLockCap) S.exposureLocked = false;
+  S.ev = S.evCaps ? clamp(S.ev, S.evCaps.min, S.evCaps.max) : 0;
+  if (!S.wbLockCap) S.wbLocked = false;
+  if (!S.tempCaps) S.colorTemp = 0;
+}
+
+// Reaplica exposição e cor depois de abrir uma câmera nova (as travas valem
+// para a imagem, não para uma lente específica).
+async function reapplyImage() {
+  if (!S.exposureLocked && !S.wbLocked && !S.ev) return;
+  try {
+    await applyTrackConstraints({ image: true });
+  } catch {
+    Object.assign(S, { exposureLocked: false, ev: 0, wbLocked: false, colorTemp: 0 });
+  }
+}
+
 function maxCaps() {
   const caps = S.video && S.video.getCapabilities ? S.video.getCapabilities() : {};
   const w = caps.width && caps.width.max ? Math.min(caps.width.max, 1920) : 1280;
@@ -392,6 +431,14 @@ async function applyTrackConstraints(extra = {}) {
   const adv = {};
   if (S.zoomCaps) adv.zoom = 'zoom' in extra ? extra.zoom : S.zoom;
   if (S.torchCap) adv.torch = 'torch' in extra ? extra.torch : S.torch;
+  // Exposição e cor: só entram quando há ajuste (ou ao desfazer um), para não
+  // mexer no automático das câmeras que nunca foram travadas.
+  if (extra.image || S.exposureLocked || S.wbLocked || S.ev) {
+    if (S.exposureLockCap) adv.exposureMode = S.exposureLocked ? 'manual' : 'continuous';
+    if (S.evCaps) adv.exposureCompensation = S.ev;
+    if (S.wbLockCap) adv.whiteBalanceMode = S.wbLocked ? 'manual' : 'continuous';
+    if (S.tempCaps && S.wbLocked && S.colorTemp > 0) adv.colorTemperature = S.colorTemp;
+  }
   if (extra.pointsOfInterest) Object.assign(adv, extra.pointsOfInterest);
   await S.video.applyConstraints({ ...videoConstraints(), advanced: Object.keys(adv).length ? [adv] : [] });
 }
@@ -495,9 +542,44 @@ async function focusAt(x, y, local) {
   if (fm.includes('continuous')) poi.focusMode = 'continuous';
   else if (fm.includes('single-shot')) poi.focusMode = 'single-shot';
   const em = caps.exposureMode || [];
-  if (em.includes('continuous')) poi.exposureMode = 'continuous';
+  // Com a exposição travada, o toque só ajusta o foco.
+  if (em.includes('continuous') && !S.exposureLocked) poi.exposureMode = 'continuous';
   await applyTrackConstraints({ pointsOfInterest: poi });
   if (local) localChange('focus', [x, y]);
+}
+
+// Aplica um ajuste de exposição/cor; se a câmera recusar, volta ao anterior.
+async function setImage(patch) {
+  const prev = { exposureLocked: S.exposureLocked, ev: S.ev, wbLocked: S.wbLocked, colorTemp: S.colorTemp };
+  Object.assign(S, patch);
+  try {
+    await applyTrackConstraints({ image: true });
+  } catch (e) {
+    Object.assign(S, prev);
+    throw e;
+  }
+  render();
+}
+
+async function setExposureLock(locked) {
+  if (!S.video || !S.exposureLockCap) throw new Unsupported();
+  await setImage({ exposureLocked: locked });
+}
+
+async function setExposureCompensation(value) {
+  if (!S.video || !S.evCaps) throw new Unsupported();
+  const { min, max, step } = S.evCaps;
+  await setImage({ ev: Math.round(clamp(value, min, max) / step) * step });
+}
+
+async function setWhiteBalanceLock(locked) {
+  if (!S.video || !S.wbLockCap) throw new Unsupported();
+  await setImage({ wbLocked: locked, colorTemp: locked ? S.colorTemp : 0 });
+}
+
+async function setColorTemperature(kelvin) {
+  if (!S.video || !S.tempCaps) throw new Unsupported();
+  await setImage({ wbLocked: true, colorTemp: Math.round(clamp(kelvin, S.tempCaps.min, S.tempCaps.max)) });
 }
 
 function profileFromJson(j) {
@@ -947,6 +1029,10 @@ function helloData() {
       maxFps: m.fps,
       hardwareH264: false, // o navegador não informa se a codificação é por hardware
       thermal: false,
+      exposureLock: S.exposureLockCap,
+      exposureCompensation: S.evCaps || undefined,
+      whiteBalanceLock: S.wbLockCap,
+      colorTemperature: S.tempCaps || undefined,
     },
   };
 }
@@ -1042,6 +1128,8 @@ function paramsOf(name) {
     case 'audio.mute': return ['mic'];
     case 'quality.set': return ['quality'];
     case 'focus.point': case 'exposure.point': return ['focus'];
+    case 'exposure.lock': case 'exposure.compensation': return ['exposure'];
+    case 'whitebalance.lock': case 'whitebalance.temperature': return ['whitebalance'];
     case 'preset.apply': return ['camera', 'zoom', 'quality', 'torch', 'mic'];
   }
   return [name];
@@ -1055,7 +1143,10 @@ function rememberResult(id, r) {
 }
 
 function stateSnapshot() {
-  return { zoom: Math.round(S.zoom * 100) / 100, lensId: S.lensId, torch: S.torch, micMuted: S.micMuted, profileId: S.profile.id };
+  return {
+    zoom: Math.round(S.zoom * 100) / 100, lensId: S.lensId, torch: S.torch, micMuted: S.micMuted, profileId: S.profile.id,
+    exposureLocked: S.exposureLocked, exposureCompensation: S.ev, whiteBalanceLocked: S.wbLocked, colorTemperature: S.colorTemp,
+  };
 }
 
 async function runCommand(cmd, receivedAt) {
@@ -1124,6 +1215,18 @@ async function execute(name, p) {
     case 'quality.set':
       await setProfile(profileFromJson(p), false);
       return true;
+    case 'exposure.lock':
+      await setExposureLock(p.locked === true);
+      return true;
+    case 'exposure.compensation':
+      await setExposureCompensation(num('value'));
+      return true;
+    case 'whitebalance.lock':
+      await setWhiteBalanceLock(p.locked === true);
+      return true;
+    case 'whitebalance.temperature':
+      await setColorTemperature(num('kelvin'));
+      return true;
     case 'preset.apply':
       if (typeof p.lensId === 'string' && lensById(p.lensId) && p.lensId !== S.lensId) await selectLens(p.lensId, false);
       if (p.profile && typeof p.profile === 'object') await setProfile(profileFromJson(p.profile), false);
@@ -1145,6 +1248,8 @@ function describeCommand(name) {
     case 'quality.set': return 'Qualidade alterada pelo operador';
     case 'preset.apply': return 'Preset aplicado pelo operador';
     case 'audio.mute': return 'Microfone alterado pelo operador';
+    case 'exposure.lock': case 'exposure.compensation': return 'Exposição ajustada pelo operador';
+    case 'whitebalance.lock': case 'whitebalance.temperature': return 'Cor ajustada pelo operador';
   }
   return 'Ajuste remoto aplicado';
 }
@@ -1195,7 +1300,10 @@ async function tick() {
       bitrateKbps: st.bitrateKbps || 0, fps: st.fps || 0, width: st.width || 0, height: st.height || 0,
       packetsLost: st.packetsLost || 0, rttMs: st.rttMs || 0, jitterMs: st.jitterMs || 0, availableKbps: st.availableKbps || 0,
     },
-    camera: { lensId: S.lensId || '', facing: lens ? lens.facing : 'back', zoom: S.zoom, torch: S.torch, micMuted: S.micMuted },
+    camera: {
+      lensId: S.lensId || '', facing: lens ? lens.facing : 'back', zoom: S.zoom, torch: S.torch, micMuted: S.micMuted,
+      exposureLocked: S.exposureLocked, exposureCompensation: S.ev, whiteBalanceLocked: S.wbLocked, colorTemperature: S.colorTemp,
+    },
     network: { type: S.network, quality: networkQuality() },
   });
   render();

@@ -375,5 +375,17 @@ func applyConfirmedState(s *camState, st map[string]any) {
 	if v, ok := st["micMuted"].(bool); ok {
 		cam.MicMuted = v
 	}
+	if v, ok := st["exposureLocked"].(bool); ok {
+		cam.ExposureLocked = v
+	}
+	if v, ok := st["exposureCompensation"].(float64); ok {
+		cam.ExposureCompensation = v
+	}
+	if v, ok := st["whiteBalanceLocked"].(bool); ok {
+		cam.WhiteBalanceLocked = v
+	}
+	if v, ok := st["colorTemperature"].(float64); ok {
+		cam.ColorTemperature = v
+	}
 	s.tel.Camera = cam
 }

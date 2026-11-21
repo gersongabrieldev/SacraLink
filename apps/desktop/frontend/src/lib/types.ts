@@ -13,6 +13,13 @@ export interface Lens {
   opticalZoomFactors?: number[];
 }
 
+/** Faixa de ajuste informada pela câmera. */
+export interface Range {
+  min: number;
+  max: number;
+  step: number;
+}
+
 export interface Capabilities {
   lenses: Lens[];
   torch: boolean;
@@ -23,6 +30,11 @@ export interface Capabilities {
   maxFps: number;
   hardwareH264: boolean;
   thermal: boolean;
+  /** Trava de exposição e de cor (ausente/false = o aparelho não permite). */
+  exposureLock?: boolean;
+  exposureCompensation?: Range;
+  whiteBalanceLock?: boolean;
+  colorTemperature?: Range;
 }
 
 export interface SourceStatus {
@@ -83,6 +95,11 @@ export interface CameraView {
   facing?: string;
   micMuted: boolean;
   torch: boolean;
+  exposureLocked: boolean;
+  exposureCompensation: number;
+  whiteBalanceLocked: boolean;
+  /** Temperatura de cor travada (K); ausente = automática ou travada no valor atual. */
+  colorTemperature?: number;
   capabilities?: Capabilities;
   obsSource: SourceStatus;
   lastLocalChange?: { param: string; at: number };
