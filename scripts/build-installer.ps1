@@ -167,6 +167,7 @@ switch ($Phase) {
         & $sign -Path "$work\3"
         Invoke-Self @{ Phase = "apply-setup"; Dir = "$work\3" }
         Invoke-Self @{ Phase = "verify" }
+        Invoke-Self @{ Phase = "checksums" }
         Write-Host "Fluxo de assinatura validado (certificado de teste)" -ForegroundColor Green
     }
 }

@@ -59,13 +59,16 @@ reputação (relatos de desenvolvedores, não documentação oficial).
   1. executáveis: `SacraLink.exe`, `sacralink-server.exe`,
      `sacralink-server.com` e `mediamtx.exe` (o `mediamtx.exe.sha256` é
      refeito depois, porque a assinatura muda o hash);
-  2. partes internas do instalador: o Inno Setup só assina o programa
-     temporário e o desinstalador durante a compilação, chamando o SignTool.
-     O SignTool do SacraLink (`scripts/signing/inno-signtool.ps1`) separa
-     esses arquivos numa primeira compilação; depois de assinados, uma segunda
-     compilação idêntica usa as cópias assinadas (conferidas pelo SHA-256; se
-     a compilação não for idêntica, o build falha em vez de publicar partes
-     sem assinatura);
+  2. partes internas do instalador: o motor `uninst.e32`, usado tanto no
+     desinstalador quanto nas cópias temporárias que o instalador extrai ao
+     rodar (o `.tmp` bloqueado na v0.2.0). O Inno Setup só o assina durante a
+     compilação, chamando o SignTool, e confere se o arquivo voltou assinado.
+     O SignTool do SacraLink (`scripts/signing/inno-signtool.ps1`) guarda a
+     cópia sem assinatura numa primeira compilação (devolvendo ao ISCC uma
+     assinatura descartável, só para ele seguir); depois de assinada pela
+     SignPath, uma segunda compilação idêntica usa a cópia assinada,
+     conferida pelo SHA-256. Se a compilação não for idêntica, o build falha
+     em vez de publicar partes sem assinatura;
   3. o instalador final.
 - **SignPath:** cada rodada envia uma pasta como artefato do GitHub Actions
   para a ação `signpath/github-action-submit-signing-request@v3`; o
